@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>g55xfer pipeline + corl_mug DINO grasp-region transfer (TABLED)</title>
+<style>
+  body{font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;max-width:980px;margin:2rem auto;padding:0 1.2rem;color:#1b2330;line-height:1.5}
+  h1{border-bottom:3px solid #2f6fb0;padding-bottom:.3rem}
+  h2{margin-top:2rem;color:#205089;border-bottom:1px solid #d6e2ef;padding-bottom:.2rem}
+  h3{color:#2a6}
+  code,pre{background:#f3f6fa;border-radius:5px}
+  code{padding:.1rem .35rem}
+  pre{padding:.8rem 1rem;overflow-x:auto;border:1px solid #e0e8f1}
+  table{border-collapse:collapse;width:100%;margin:.6rem 0}
+  th,td{border:1px solid #cdd8e4;padding:.35rem .6rem;text-align:left;font-size:.92rem}
+  th{background:#eaf1f8}
+  .warn{background:#fff4e5;border-left:4px solid #e8932a;padding:.6rem 1rem;border-radius:4px}
+  .ok{background:#e9f8ee;border-left:4px solid #34a853;padding:.6rem 1rem;border-radius:4px}
+  .todo{background:#fde9ec;border-left:4px solid #d6455d;padding:.6rem 1rem;border-radius:4px}
+  small{color:#5a6b7d}
+</style>
+</head>
+<body>
+<h1>g55xfer pipeline + corl_mug DINO grasp-region transfer</h1>
+<small>Created 2026-06-03. Two parts: (A) the COMPLETE grasp-55-on-cousins pipeline (done), (B) the DINO grasp-region transfer (TABLED — blocked on a deleted splat).</small>
+
+<h2>Part A — grasp-55-on-cousins (DONE, production-ready)</h2>
+<p>Transfer corl_mug's curated <b>grasp 55</b> onto all 15 cousin mugs as a separate, selectable grasp set
+(<code>GRASP_SET=g55xfer</code>), with three automatic corrections so each cousin grasps like corl_mug.
+Smoke: <b>100% accept</b> (mug1/mug7/y1).</p>
+
+<table>
+<tr><th>Stage</th><th>What</th><th>Tool</th></tr>
+<tr><td>Transfer</td><td>grasp 55 → each cousin via Sim3 + translate-recover (force-closure validated)</td><td><code>transfer_grasp55_to_cousins.py</code> → <code>grasp55_xfer_results.json</code></td></tr>
+<tr><td>1. Depth-match</td><td>deepen along approach (+Z) so the mug-body center sits at corl's <b>34.5 mm</b> depth (cousins were +3.4 to +12.1 mm too shallow). Depth = midpoint of body near/far walls along approach, ray-cast bundle</td><td><code>perturb_g55xfer_lower.py</code> (<code>approach_depth</code>)</td></tr>
+<tr><td>2. Lower variants</td><td>from the depth-matched grasp, translate straight DOWN in WORLD −Z (editor→world map M, invert; X/Y fixed in world), each <b>re-depth-matched</b>, validated. ~0.25/1.0/1.8 cm lower</td><td>same (<code>world_map</code>, <code>Minv@[0,0,-s]</code>)</td></tr>
+<tr><td>3. Contact close</td><td>per-grasp <code>gripper_close</code> from pad-vs-mesh raycast (fixes the inherited 0.648 → per-mug 0.65–0.82)</td><td><code>grasp_record</code> / <code>compute_grasp_close_values.py</code> (added <code>--grasps-name</code>)</td></tr>
+<tr><td>IK tables</td><td>slim frame-0 seed table per cousin, multi-grasp pool</td><td><code>compute_cousin_ik_tables.py --grasps-name grasps_g55xfer.txt --out-suffix _g55xfer</code></td></tr>
+<tr><td>Data-gen wiring</td><td><code>GRASP_SET=g55xfer</code> → <code>&lt;cousin&gt;_ik_table_g55xfer.npz</code>, good_grasp_lo=0, full pool</td><td><code>launch_xarm7_corl.py</code> (mug-variant block)</td></tr>
+<tr><td>Viz</td><td>viser world-frame pool (grasp55 cyan + lowers green/yellow) + IsaacSim render</td><td><code>view_g55xfer_pool.py</code> (port 8097), <code>run_g55xfer_smoke.sh</code></td></tr>
+</table>
+
+<div class="ok"><b>Per-mug pool sizes:</b> 14 mugs G=4 (grasp55 + 3 lower), y3 G=3, <b>mug9 G=1</b> (too tight for valid lowers; also breaks at 8 mm deepen @scale 1.0). Build order: <code>build_g55xfer_grasp_files.py</code> → <code>perturb_g55xfer_lower.py --mug all</code> → rebuild 16 IK tables.</div>
+
+<h3>Run it</h3>
+<pre>MUG_VARIANT_POOL="corl_mug,mug1,...,y5"  GRASP_SET=g55xfer  GRASP_ALLOW=NONE
+GRASP_DEEPEN_MM=4.0   # planner deepen ON TOP of the 34.5mm match (uniform; 8mm caps mug7/mug9)
+# → run_corl_overnight_vec.sh / build_corl_vla_dataset_vec.py</pre>
+
+<h2 id="dino">Part B — DINO grasp-region transfer (TABLED 2026-06-03)</h2>
+<p><b>Goal:</b> (1) find the nearby gaussians on corl_mug at grasp 55 (the grasp region); (2) take their decoded
+DINOv3 features; (3) find similar gaussians across the other mugs via DINO matching; (4) visualize.</p>
+
+<div class="todo">
+<b>BLOCKER:</b> the <b>corl_mug DINO splat is gone</b>. It was
+<code>~/Downloads/outputs/final_mug_cm/state_rigid_20260522_164504.pt</code> (all corl_mug symlinks point there;
+had <code>dino_feats</code>). It was <b>deleted 2026-06-02 night</b> during the overnight disk-cleanup (`final_mug_cm`
+was the 33 GB target). The IK pipeline then rebuilt <code>sam3_outputs/corl_mug/corl_mug.pt</code> from the surviving
+<code>.ply</code> — which does NOT store DINO — so the reconstruction (1340 gaussians) has no features.
+</div>
+
+<h3>What survives</h3>
+<ul>
+<li><b>Source scan (regenerable!):</b> <code>~/Downloads/final_mug_cm/</code> (a DIFFERENT dir, not deleted) —
+images, COLMAP, <code>transforms.json</code>, segmentation, sparse PC.</li>
+<li><b>corl_cm DINO splat intact:</b> <code>~/Desktop/sam3_outputs/corl_cm/corl_cm_ds.pt</code> (12,634 gaussians, DINO).</li>
+<li><b>Cousins have DINO:</b> <code>&lt;cousin&gt;/stage2/splat_viewable.pt</code> (~640k gaussians, <code>features_dc</code>+<code>dino_feats</code>).</li>
+<li>Same-mug DINO candidates (verify alignment first): <code>corl_pour_final/mug.pt</code> (1839), <code>corl_pour/corl_pour_mug.pt</code> (1609). NOTE: user said NOT <code>corl_mug_tree/corl_mug_tree_mug.pt</code>.</li>
+</ul>
+
+<h3>Recovery options (pick when resuming)</h3>
+<ol>
+<li><b>Backup on the other machine</b> — <code>100.85.54.108</code> (Tailscale). Fastest if present: <code>ssh</code> + find <code>state_rigid_20260522_164504.pt</code> or a corl_mug splat with <code>dino_feats</code>.</li>
+<li><b>Regenerate</b> from <code>~/Downloads/final_mug_cm</code> scan (2DGS train → DINOv3 distill → segment mug). ~1–2 hr. Cleanest, exact mug.</li>
+<li><b>corl_pour proxy</b> — if same physical mug, align <code>corl_pour_final/mug.pt</code> → corl_mug grasp frame (ICP), use its DINO. Quick, needs same-mug confirmation.</li>
+</ol>
+
+<h3>Planned method once a corl_mug DINO splat is in hand</h3>
+<pre>1. Place corl_mug DINO splat in the grasp/editor frame (centered, scaled REAL_MUG_HEIGHT).
+2. grasp-55 region = gaussians within R of the grasp contact line / pad volume.
+3. region DINO = mean/all dino_feats of those gaussians (64-D).
+4. per cousin: cosine-sim(region DINO, cousin dino_feats) → top-k similar gaussians.
+5. viser: highlight matched gaussians on each cousin (the "same part" = grasp region).</pre>
+
+<p><small>Reuse: existing grasp-region + DINO-transfer tooling (<code>compute_grasp_regions.py</code>,
+GARField/<code>match_marker.py</code>, semantic-ICP nearby-mask). The cousins↔corl_mug alignments
+(<code>&lt;cousin&gt;_to_corl_mug_aligned.pt</code>) map between frames.</small></p>
+
+</body>
+</html>

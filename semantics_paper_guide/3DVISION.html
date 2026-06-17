@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>3DVISION — Per-object splat distillation from text prompts</title>
+<style>
+  :root {
+    --bg: #fcfcfd;
+    --fg: #1f2430;
+    --muted: #5a6273;
+    --line: #e3e6ee;
+    --code-bg: #f3f4f8;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --amber: #d97706;
+    --amber-soft: #fef3c7;
+    --rose: #db2777;
+    --rose-soft: #fce7f3;
+    --indigo: #4f46e5;
+    --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; padding: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    color: var(--fg); background: var(--bg);
+  }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 32px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); padding: 14px 16px; border-radius: 8px;
+    overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
+    border: 1px solid var(--line);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; vertical-align: middle;
+    margin-left: 6px; letter-spacing: 0.02em;
+  }
+  .pill.input    { background: var(--indigo-soft); color: var(--indigo); }
+  .pill.gui      { background: var(--accent-soft); color: var(--accent); }
+  .pill.headless { background: var(--amber-soft); color: var(--amber); }
+  .pill.viewer   { background: var(--rose-soft); color: var(--rose); }
+  .pill.done     { background: var(--green-soft); color: var(--green); }
+  .stage {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 24px; margin: 18px 0;
+    background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .stage h2 { margin: 0 0 6px; display: flex; align-items: baseline; }
+  .stage h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: white;
+    font-size: 13px; font-weight: 700; margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .stage .desc { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  .stage .file {
+    color: var(--muted); font-size: 12px; margin: 4px 0 10px;
+  }
+  .stage .file a { color: var(--accent); text-decoration: none; }
+  .stage .file a:hover { text-decoration: underline; }
+  .key { font-weight: 600; color: var(--fg); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
+  }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); background: var(--code-bg); }
+  td code { font-size: 0.92em; }
+  .nb {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px;
+  }
+  .nb .lbl { font-weight: 700; color: var(--accent); margin-right: 4px; }
+  .warn {
+    background: var(--amber-soft); border-left: 3px solid var(--amber);
+    padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px;
+  }
+  .warn .lbl { font-weight: 700; color: var(--amber); margin-right: 4px; }
+  .arrow {
+    text-align: center; font-size: 22px; color: var(--muted);
+    margin: -2px 0; user-select: none;
+  }
+  .toc { font-size: 13px; margin: 0 0 24px; color: var(--muted); }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  ul.compact { margin: 6px 0; padding-left: 22px; }
+  ul.compact li { margin: 3px 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  .quickstart {
+    background: linear-gradient(135deg, var(--indigo-soft) 0%, white 50%);
+    border: 1px solid var(--indigo);
+    border-radius: 12px; padding: 18px 22px; margin: 0 0 24px;
+  }
+  .quickstart h2 { margin-top: 0; color: var(--indigo); }
+  .quickstart pre { background: white; }
+  figure {
+    margin: 14px 0; padding: 0;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  figure img {
+    display: block; width: 100%; height: auto;
+    background: #000;
+  }
+  figcaption {
+    padding: 8px 14px; font-size: 12px; color: var(--muted);
+    border-top: 1px solid var(--line);
+    background: white;
+  }
+  .figure-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 14px 0;
+  }
+  .figure-row figure { margin: 0; }
+  .figure-row.thirds { grid-template-columns: 2fr 1fr; }
+  .hero {
+    background: linear-gradient(135deg, #1f2430 0%, #2a2f3d 100%);
+    border-radius: 12px; padding: 16px; margin: 0 0 24px;
+    border: 1px solid var(--line);
+  }
+  .hero figcaption {
+    background: transparent; color: #cfd3df; border-top: none;
+    text-align: center; padding-top: 12px;
+  }
+  .hero figure { background: transparent; border: none; }
+  .hero figure img { background: #000; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>3DVISION — Text-prompted per-object splats</h1>
+<p class="sub">Train a Gaussian splat from a scan, then turn one or more text prompts (e.g. <code>"laptop"</code>, <code>"mug"</code>, <code>"coffee maker"</code>) into a clean per-object <code>.pt</code> sub-splat. Pipeline lives in <code>~/Desktop/real2render2real/</code>; venv: <code>~/Desktop/real2render2real/.venv</code>.</p>
+
+<div class="hero">
+  <figure>
+    <img src="3dvision_assets/stage4_laptop_only_frame0.jpg" alt="Side-by-side: input frame vs isolated laptop splat">
+    <figcaption>Stage 4 output on kaizen / "laptop" — input scan frame (left) vs the 9.5% slice of the splat that survives <code>Prob ≥ 0.8 ∧ Visibility ≥ 170</code> (right). 36 817 Gaussians, all DINOv3 features preserved.</figcaption>
+  </figure>
+</div>
+
+<p class="toc">
+  <strong>Stages:</strong>
+  <a href="#s1">1. Train splat with DiG</a> ·
+  <a href="#s2">2. SAM3 → SAM2 video masks</a> ·
+  <a href="#s3">3. Distill masks → per-Gaussian probability</a> ·
+  <a href="#s4">4. Filter + save object-only splat (viser)</a> ·
+  <a href="#s5">5. Track in an action video (ground-seeded)</a> ·
+  <a href="#s6">6. Ground plane from the objects</a> ·
+  <a href="#s7">7. HAMER hand recovery</a> ·
+  <a href="#s8">8. Hand→mug contact alignment</a> ·
+  <a href="#s9">9. Settled grasp → xArm gripper</a> ·
+  <a href="#refs">Reference numbers + paths</a>
+</p>
+
+<div class="quickstart">
+<h2>⚡ End-to-end (validated on kaizen, laptop, 2026-05-23)</h2>
+<pre>cd ~/Desktop/real2render2real &amp;&amp; source .venv/bin/activate
+
+# 0. Capture: ns-process-data video → ~/Downloads/&lt;scene&gt;/{images, transforms.json, colmap, sparse_pc.ply}
+
+# 1. Train DiG (8k steps; ~15-30 min on RTX 5090)
+cd ~/Downloads
+yes y | ns-train dig --data &lt;scene&gt;
+# → outputs/&lt;scene&gt;/dig/&lt;ts&gt;/{nerfstudio_models/step-*.ckpt, config.yml, dataparser_transforms.json}
+
+# 2. Export to flat-dict .pt
+yes y | python ~/Desktop/real2render2real/export_dig_splat.py \
+    --load-config outputs/&lt;scene&gt;/dig/&lt;ts&gt;/config.yml \
+    --output ~/Downloads/&lt;scene&gt;/splat.pt
+
+# 3. SAM3 frame-0 + SAM2 video propagate (1-2 prompts)
+python ~/Desktop/real2render2real/segment_video_objects.py \
+    --frames-dir ~/Downloads/&lt;scene&gt;/images \
+    --prompts laptop \
+    --output-dir ~/Downloads/&lt;scene&gt;/segmentation
+
+# 4. Distill masks → per-Gaussian probabilities (~4 s)
+python ~/Desktop/real2render2real/distill_obj_probs_to_splat.py \
+    --splat                  ~/Downloads/&lt;scene&gt;/splat.pt \
+    --scan-dir               ~/Downloads/&lt;scene&gt; \
+    --dataparser-transforms  ~/Downloads/outputs/&lt;scene&gt;/dig/&lt;ts&gt;/dataparser_transforms.json \
+    --masks-dir              ~/Downloads/&lt;scene&gt;/segmentation \
+    --object-names           laptop \
+    --output                 ~/Downloads/&lt;scene&gt;/splat_obj.pt
+
+# 5. Interactive filter + save in viser (Prob ≥, Visibility ≥, 💾 Save filtered splat)
+python ~/Desktop/real2render2real/view_obj_probs.py --splat ~/Downloads/&lt;scene&gt;/splat_obj.pt
+# Browser → http://localhost:8080
+# → ~/Downloads/&lt;scene&gt;/splat_obj_filtered.pt  (or whatever path you typed in the GUI)</pre>
+<p class="sub" style="margin:10px 0 0">Result on kaizen / "laptop": 386 484 → 36 817 Gaussians (9.5%) at <code>p≥0.8 ∧ vis≥170</code>. All DINOv3 features preserved.</p>
+</div>
+
+<!-- ═════════════════════════ STAGE 1 ═════════════════════════ -->
+<div class="stage" id="s1">
+  <h2><span class="num">1</span> Train the splat with DiG <span class="pill input">input</span></h2>
+  <p class="desc">Standard nerfstudio capture (images + COLMAP + <code>transforms.json</code>) → DiG-trained Gaussian splat with per-Gaussian 64-D DINOv3-PCA features + an MLP decoder back to the full 1024-D DINOv3 feature space.</p>
+  <p class="file">Editable install at <a>~/Desktop/real2render2real/dependencies/rsrd/dependencies/dig/dig/</a>.</p>
+
+  <h3>Run</h3>
+  <pre>cd ~/Downloads                                    # so the relative `data` path in config.yml resolves
+yes y | ns-train dig --data &lt;scene&gt;
+# answers 'y' to the GARField prompt — we don't use the segmenter, just the trained splat</pre>
+
+  <table>
+    <tr><th>Flag / env</th><th>Value</th><th>Why</th></tr>
+    <tr><td><code>--data</code></td><td><code>&lt;scene&gt;</code> (relative)</td><td>Must match a folder under CWD; the relative path is baked into <code>config.yml</code> for downstream reload. Train from <code>~/Downloads/</code> to keep paths consistent with our convention.</td></tr>
+    <tr><td>GARField prompt</td><td>answer <code>y</code></td><td>The interactive segmenter is gated on a GARField ckpt we don't have / don't want (training GARField is too slow). Skipping it just disables the in-viewer "Save Rigid-Body State" button; the trained splat itself is fully usable.</td></tr>
+    <tr><td>Default steps</td><td>8000</td><td>Sufficient for object-scale orbit scans. Bump <code>--max-num-iterations</code> for larger scenes.</td></tr>
+  </table>
+
+  <h3>Outputs</h3>
+  <pre>~/Downloads/outputs/&lt;scene&gt;/dig/&lt;ts&gt;/
+├── config.yml                       (load with eval_setup)
+├── dataparser_transforms.json       ← REQUIRED for stage 3 (T_dpt @ applied_transform + scale)
+└── nerfstudio_models/step-*.ckpt</pre>
+
+  <h3>Export to flat-dict <code>.pt</code></h3>
+  <p>The training ckpt is a nerfstudio object graph; convert it to a plain <code>dict[str, Tensor]</code> for everything downstream.</p>
+  <pre>cd ~/Downloads &amp;&amp; yes y | python ~/Desktop/real2render2real/export_dig_splat.py \
+    --load-config outputs/&lt;scene&gt;/dig/&lt;ts&gt;/config.yml \
+    --output ~/Downloads/&lt;scene&gt;/splat.pt</pre>
+
+  <p class="key">Saved keys:</p>
+  <table>
+    <tr><th>key</th><th>shape</th><th>convention</th></tr>
+    <tr><td><code>means</code></td><td>(N, 3)</td><td>world frame (dataparser-output)</td></tr>
+    <tr><td><code>scales</code></td><td>(N, 3)</td><td>log-scales (rasterizer applies <code>exp</code>)</td></tr>
+    <tr><td><code>quats</code></td><td>(N, 4)</td><td>wxyz, unnormalized</td></tr>
+    <tr><td><code>opacities</code></td><td>(N, 1)</td><td>logits (rasterizer applies <code>sigmoid</code>)</td></tr>
+    <tr><td><code>features_dc</code></td><td>(N, 3)</td><td>SH DC coefficient</td></tr>
+    <tr><td><code>dino_feats</code></td><td>(N, 64)</td><td>DINOv3 PCA features</td></tr>
+    <tr><td><code>nn_state_dict</code></td><td>dict</td><td>MLP decoder 64 → 128 → 256 → 512 → 1024</td></tr>
+  </table>
+
+  <div class="warn"><span class="lbl">Path gotcha:</span> <code>ns-train</code> bakes <em>relative</em> data paths into <code>config.yml</code>. Always run <code>ns-train</code> and <code>export_dig_splat.py</code> with the same CWD (we use <code>~/Downloads/</code>). Otherwise <code>eval_setup</code> raises <em>"Data directory X does not exist"</em>.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 2 ═════════════════════════ -->
+<div class="stage" id="s2">
+  <h2><span class="num">2</span> SAM3 frame-0 → SAM2 video propagate <span class="pill headless">headless</span></h2>
+  <p class="desc">For each text prompt: run SAM3 on frame 0 → seed mask; SAM2 video predictor propagates it across all frames. Outputs per-object binary masks + black-filled RGB + sanity-check overlays.</p>
+  <p class="file">Script: <a>~/Desktop/real2render2real/segment_video_objects.py</a>. Uses <code>~/Desktop/sam3/</code> + <code>~/Downloads/sam2_checkpoints/sam2.1_hiera_large.pt</code>.</p>
+
+  <h3>Run</h3>
+  <pre># 1 prompt
+python segment_video_objects.py \
+    --frames-dir ~/Downloads/&lt;scene&gt;/images \
+    --prompts laptop \
+    --output-dir ~/Downloads/&lt;scene&gt;/segmentation
+
+# 2 prompts (also produces masked_rgb_combined/ with both objects zeroed)
+python segment_video_objects.py \
+    --frames-dir ~/Downloads/&lt;scene&gt;/images \
+    --prompts mug "coffee maker" \
+    --output-dir ~/Downloads/&lt;scene&gt;/segmentation</pre>
+
+  <h3>Outputs (per object slug)</h3>
+  <pre>~/Downloads/&lt;scene&gt;/segmentation/
+├── &lt;slug&gt;/masks/frame_NNNNN.png         binary 0/255 — feeds stage 3
+├── &lt;slug&gt;/masked_rgb/frame_NNNNN.png    RGB w/ object pixels = 0
+├── &lt;slug&gt;/overlay/frame_NNNNN.png       green tint + contour over input (eyeballing)
+└── masked_rgb_combined/...               only when 2 prompts</pre>
+
+  <div class="figure-row thirds">
+    <figure>
+      <img src="3dvision_assets/stage2_overlay_frame100.png" alt="SAM3+SAM2 overlay at frame 100">
+      <figcaption>SAM3 (frame 0) + SAM2 propagation visualized on input frame 100. Green tint + contour = the per-frame laptop mask.</figcaption>
+    </figure>
+    <figure>
+      <img src="3dvision_assets/stage2_mask_frame100.png" alt="Binary laptop mask frame 100">
+      <figcaption>The corresponding binary mask written under <code>laptop/masks/</code>. White = laptop, black = background. This is what stage 3 consumes.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Quick overlay video (no script — one ffmpeg line)</h3>
+  <pre>cd ~/Downloads/&lt;scene&gt;/segmentation &amp;&amp; \
+ffmpeg -y -framerate 30 -i '&lt;slug&gt;/overlay/frame_%05d.png' \
+    -c:v libx264 -pix_fmt yuv420p \
+    -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+    &lt;slug&gt;_overlay.mp4 &amp;&amp; xdg-open &lt;slug&gt;_overlay.mp4 &amp;</pre>
+
+  <table>
+    <tr><th>Knob</th><th>Default</th><th>Notes</th></tr>
+    <tr><td><code>--prompts</code></td><td>required</td><td>1 or 2 strings. Slugged to <code>lower_underscore</code> for output dir names.</td></tr>
+    <tr><td><code>--prompt-frame</code></td><td>0</td><td>Which frame SAM3 anchors the mask on. SAM3 frame-0 is reliable for the manipulated/foreground object class.</td></tr>
+    <tr><td><code>--no-save-overlay</code></td><td>off</td><td>Skip the eyeballing PNG dir.</td></tr>
+    <tr><td><code>--reuse-jpeg</code></td><td>on</td><td>Caches PNG→JPEG conversion (SAM2 needs JPEG) under <code>&lt;out&gt;/_jpeg_frames/</code>.</td></tr>
+  </table>
+
+  <div class="nb"><span class="lbl">SAM3 scoring:</span> highest-confidence mask wins per prompt. Score is printed at startup; if it's &lt; 0.6 you probably have a bad prompt or the object isn't visible on the prompt frame.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 3 ═════════════════════════ -->
+<div class="stage" id="s3">
+  <h2><span class="num">3</span> Distill masks → per-Gaussian probability <span class="pill headless">headless</span></h2>
+  <p class="desc">Project each Gaussian center into every training-time camera; count how often it lands inside each object's mask. Saves <code>obj_probs[N, K]</code> + <code>obj_names[K]</code> + <code>obj_visible_count[N]</code> directly into the splat <code>.pt</code> (existing fields preserved).</p>
+  <p class="file">Script: <a>~/Desktop/real2render2real/distill_obj_probs_to_splat.py</a>. Mirrors the projection/voting pattern from <code>extract_part_from_source_rgbs.py</code>, but soft-prob (not hard-keep) and multi-object in one pass.</p>
+
+  <h3>Run</h3>
+  <pre>python distill_obj_probs_to_splat.py \
+    --splat                  ~/Downloads/&lt;scene&gt;/splat.pt \
+    --scan-dir               ~/Downloads/&lt;scene&gt; \
+    --dataparser-transforms  ~/Downloads/outputs/&lt;scene&gt;/dig/&lt;ts&gt;/dataparser_transforms.json \
+    --masks-dir              ~/Downloads/&lt;scene&gt;/segmentation \
+    --object-names           laptop \
+    --output                 ~/Downloads/&lt;scene&gt;/splat_obj.pt</pre>
+
+  <h3>What it adds to the <code>.pt</code></h3>
+  <table>
+    <tr><th>key</th><th>shape</th><th>meaning</th></tr>
+    <tr><td><code>obj_probs</code></td><td>(N, K)</td><td>float32 ∈ [0, 1], per-Gaussian × per-object vote ratio</td></tr>
+    <tr><td><code>obj_logits</code></td><td>(N, K)</td><td>logit(prob), clamped to [eps, 1−eps]; handy for downstream optimization</td></tr>
+    <tr><td><code>obj_names</code></td><td>list[str]</td><td>K names, matching subdirs in <code>--masks-dir</code></td></tr>
+    <tr><td><code>obj_visible_count</code></td><td>(N,)</td><td>int32, frames where Gaussian's center projected in-view</td></tr>
+  </table>
+
+  <h3>Camera-frame chain (the gotcha)</h3>
+  <p>The per-frame <code>transform_matrix</code> in <code>transforms.json</code> is in <strong>saved frame</strong> (post-applied_transform). But <code>dataparser_transforms.json["transform"]</code> is <code>T_dpt @ applied_transform</code> (original → output), <strong>not</strong> just <code>T_dpt</code>. So we must un-apply <code>applied_transform</code> first:</p>
+  <pre>c2w_orig   = applied_transform⁻¹ @ c2w_per_frame    # saved -> original
+c2w_output = T_dpt @ c2w_orig                       # original -> output (splat frame)
+c2w_output[:3, 3] *= scale</pre>
+  <p>Skipping the un-apply step double-applies <code>applied_transform</code>: rendered splat appears rotated ~90° vs the input, and <code>p&gt;0.5</code> count drops by ~5× (laptop on kaizen: 55 144 → 10 901). The <code>world_from_raw()</code> helper handles this automatically when <code>--scan-dir</code> contains an <code>applied_transform</code>.</p>
+
+  <h3>Sanity-check the chain</h3>
+  <pre>python scripts/render_obj_probs_at_views.py \
+    --splat                  ~/Downloads/&lt;scene&gt;/splat_obj.pt \
+    --scan-dir               ~/Downloads/&lt;scene&gt; \
+    --dataparser-transforms  ~/Downloads/outputs/&lt;scene&gt;/dig/&lt;ts&gt;/dataparser_transforms.json \
+    --frame-indices          0 100 200 300 \
+    --output-dir             ~/Downloads/&lt;scene&gt;/render_check</pre>
+  <p>Each output is a 3-panel <code>[ INPUT | SPLAT RGB | PROB(obj) ]</code>. Splat-RGB must match input pixel-for-pixel; prob heatmap should land on the labeled object. If splat-RGB is rotated/tilted, the camera-frame chain is broken — see above.</p>
+
+  <figure>
+    <img src="3dvision_assets/stage3_render_check_frame0.jpg" alt="Stage 3 render check frame 0 — INPUT | SPLAT RGB | PROB(laptop)">
+    <figcaption>Stage 3 diagnostic on kaizen frame 0. Left = input photo. Middle = splat rasterized at the training camera (pixel-aligned to input ✓). Right = per-Gaussian laptop probability rendered through gsplat with a JET heatmap overlay — red on laptop pixels = working.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="3dvision_assets/stage3_render_check_broken_frame0.jpg" alt="Stage 3 render check with broken transform chain">
+    <figcaption><strong>What it looks like when the transform chain is wrong</strong> — same frame, same script, but without un-applying <code>applied_transform</code>. Splat-RGB rotates ~90° vs the input and the prob heatmap lands on the wall instead of the laptop. <code>p&gt;0.5</code> count drops from 55 144 to 10 901. If you see this, fix the chain before trusting any downstream numbers.</figcaption>
+  </figure>
+
+  <h3>Knobs</h3>
+  <table>
+    <tr><th>flag</th><th>default</th><th>effect</th></tr>
+    <tr><td><code>--object-names</code></td><td>required</td><td>Names must match subdir names under <code>--masks-dir</code> (slugs from stage 2).</td></tr>
+    <tr><td><code>--min-visibility</code></td><td>3</td><td>Gaussians visible in fewer frames than this get prob zeroed. Bumping to 20-100 culls flukes (small effect on most scenes).</td></tr>
+    <tr><td><code>--no-save-logits</code></td><td>off</td><td>Skip the <code>obj_logits</code> field.</td></tr>
+  </table>
+
+  <div class="warn"><span class="lbl">Limitation:</span> projection-only voting uses Gaussian centers — no occlusion check. A Gaussian on the back wall that projects through into the laptop mask region gets counted as in_mask. Workaround: combine high <code>Prob ≥</code> with high <code>Visibility ≥</code> at stage 4. Real fix (TODO): depth-aware voting — rasterize per-frame depth, only count a Gaussian's vote if it's within ε of the rendered depth at its projected pixel.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 4 ═════════════════════════ -->
+<div class="stage" id="s4">
+  <h2><span class="num">4</span> Filter + save object-only splat <span class="pill viewer">viser</span></h2>
+  <p class="desc">Interactive viser viewer: tints Gaussians by per-object probability, lets you dial in the (<code>prob ≥</code>, <code>visibility ≥</code>) threshold pair until residuals vanish, then dumps a sliced <code>.pt</code> with only the kept Gaussians. All fields (DINO, MLP decoder, obj_probs, etc.) come along.</p>
+  <p class="file">Script: <a>~/Desktop/real2render2real/view_obj_probs.py</a>. Default port 8080 (preflight-kill the port before launching — viser silently falls back otherwise).</p>
+
+  <h3>Launch</h3>
+  <pre>lsof -ti :8080 | xargs -r kill -9
+python view_obj_probs.py --splat ~/Downloads/&lt;scene&gt;/splat_obj.pt
+xdg-open http://localhost:8080</pre>
+
+  <h3>GUI controls</h3>
+  <table>
+    <tr><th>Control</th><th>What it does</th></tr>
+    <tr><td><code>Color mode</code></td><td><code>RGB</code> (raw splat colors) / <code>Obj prob (max)</code> (tint by max prob across objects) / <code>Obj prob (per-channel)</code> (additive tint per object — default).</td></tr>
+    <tr><td><code>Prob ≥</code></td><td>Slider 0.0 → 1.0. Gaussians whose max prob (across active objects) is below this fade out (or are culled if "Show only…" is on).</td></tr>
+    <tr><td><code>Visibility ≥ (frames)</code></td><td>Slider 0 → max-visibility. Drops low-visibility flukes (Gaussians seen in only a few frames).</td></tr>
+    <tr><td><code>Prob blend</code></td><td>Tint strength (0 = pure RGB, 1 = pure color on p=1 Gaussians).</td></tr>
+    <tr><td><code>Show only Gaussians passing filter</code></td><td>Hard-cull instead of fade. Useful when residuals are still visible despite the opacity fade.</td></tr>
+    <tr><td><code>include: &lt;obj&gt;</code></td><td>One checkbox per object. Toggle objects out of the color tinting + filter (their column zeros out of <code>probs_active</code>).</td></tr>
+    <tr><td><code>Save path</code></td><td>Destination for the filtered splat. Defaults to <code>&lt;splat&gt;_filtered.pt</code>.</td></tr>
+    <tr><td><code>💾 Save filtered splat</code></td><td>Writes the sliced <code>.pt</code>. Status line below shows kept-count + path.</td></tr>
+  </table>
+
+  <div class="figure-row">
+    <figure>
+      <img src="3dvision_assets/stage4_laptop_only_frame0.jpg" alt="Laptop-only splat rendered at training frame 0">
+      <figcaption>Laptop-only splat (36 817 Gaussians) rendered at training frame 0. Body, screen, keyboard intact; background fully gone.</figcaption>
+    </figure>
+    <figure>
+      <img src="3dvision_assets/stage4_laptop_only_frame100.jpg" alt="Laptop-only splat rendered at training frame 100">
+      <figcaption>Same splat at training frame 100 — rear-quarter view. Minor halo around the lid edge is the projection-vote's only-uses-centers limitation; raising <code>Prob ≥</code> further trims it.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Recipe (validated on kaizen, laptop)</h3>
+  <table>
+    <tr><th>setting</th><th>Gaussians kept</th><th>residuals</th></tr>
+    <tr><td>Prob ≥ 0.5, Visibility ≥ 0</td><td>55 144 (14.3%)</td><td>back-wall halos visible</td></tr>
+    <tr><td>Prob ≥ 0.5, Visibility ≥ 100</td><td>41 676 (10.8%)</td><td>mostly clean</td></tr>
+    <tr><td>Prob ≥ 0.7, Visibility ≥ 100</td><td>37 557 (9.7%)</td><td>clean</td></tr>
+    <tr><td><strong>Prob ≥ 0.8, Visibility ≥ 170</strong></td><td><strong>36 817 (9.5%)</strong></td><td><strong>tight; this is what we shipped</strong></td></tr>
+    <tr><td>Prob ≥ 0.95, Visibility ≥ 100</td><td>29 531 (7.6%)</td><td>over-cull, loses screen edges</td></tr>
+  </table>
+
+  <h3>What's in the filtered <code>.pt</code></h3>
+  <p>All fields whose first dim is <code>N</code> get sliced; everything else (the MLP decoder, <code>obj_names</code>) is copied verbatim:</p>
+  <pre>~/Downloads/&lt;scene&gt;/splat_obj_filtered.pt
+├── means           (M, 3)      ← M ≪ N, e.g. 36817 / 386484
+├── scales          (M, 3)
+├── quats           (M, 4)
+├── opacities       (M, 1)
+├── features_dc     (M, 3)
+├── dino_feats      (M, 64)        DINO PCA preserved
+├── obj_probs       (M, K)
+├── obj_logits      (M, K)
+├── obj_visible_count (M,)
+├── obj_names       list[K]
+└── nn_state_dict   dict (64 → 128 → 256 → 512 → 1024 MLP)</pre>
+
+  <p>Loadable by <code>load_object_splat.py</code>, the tracker, ICP / semantic-ICP pipelines — anything that pulls the canonical keys and ignores unknown ones.</p>
+
+  <div class="nb"><span class="lbl">Compare against original:</span>
+  <pre>python view_obj_probs.py --splat ~/Downloads/&lt;scene&gt;/splat_obj_filtered.pt</pre>
+  Should show only the object's Gaussians from the start. <code>Prob ≥</code> slider can be raised further to clean any remaining residuals before another save.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 5 ═════════════════════════ -->
+<div class="stage" id="s5">
+  <h2><span class="num">5</span> Track the object splat in an action video <span class="pill headless">headless</span></h2>
+  <p class="desc">A filtered per-object splat (Stage 4) is a ready <em>tracking reference</em>. This step recovers the object's per-frame SE(3) pose from an RGB action video via <code>track_with_dino_sam3.py</code> (DINO + RGB + silhouette + depth-ranking). The init is the hard part on near-symmetric objects — solved here by <strong>ground-seeded pose init</strong>: fit the table plane from the <em>scene</em> splat (true 3D geometry, none of single-image monodepth's ~5.7° tilt bias) and seed from upright camera orbits about that normal, instead of a blind rotation sweep.</p>
+  <p class="file">Scripts (armlab_splat_tracking): <code>split_obj_probs_splat.py</code>, <code>view_splat_ground_corl.py</code>, <code>view_seed_renders_corl_mug.py</code>, <code>track_corl_pour_init_ground.sh</code>, <code>track_corl_pour_mug.sh</code>, <code>track_corl_pour_bowl.sh</code>. Tracker: <code>real2render2real/scripts/track_with_dino_sam3.py</code>.</p>
+
+  <div class="nb"><span class="lbl">★ Canonical recipe — use this for any object resting on a known surface:</span> <strong>ground-seeded init is the winning approach.</strong> Fit the table plane from the <em>scene</em> splat, seed pose-init with upright orbit views about that normal (<code>GROUND_SEEDS=1</code>), rank by silhouette (<code>RANK_SIL_W=5</code>), then track at <code>PER_FRAME_SIL_W=1000</code>. On the corl_pour mug this took frame-0 init from a mis-tilted <code>WIDE_ROT</code> result to <strong>IoU 0.978</strong>. Don't fall back to the blind roll sweep when a ground plane is available.</div>
+
+  <div class="nb"><span class="lbl">★★ Per-seed refinement (2026-06-04) — supersedes "refine only winner":</span> The old pipeline ran 48 ground-orbit seeds → 300 Adam init iters each → ranked by hard IoU@0.5 → refined ONLY the winner with 150 iters of soft-IoU loss. <strong>The bug:</strong> hard IoU@0.5 on sparse DINO-distilled splats is threshold-fragile — a visually-correct seed with mean α≈0.3 (lots of α∈[0.2, 0.5] pixels) reads <code>IoU≈0.6</code>, while a broadside-but-wrong-pose seed with denser α stacks reads <code>IoU≈0.7</code> and wins the ranking. The refinement then runs on the wrong basin. <strong>The fix:</strong> <code>REFINE_PER_SEED=1</code> (default when <code>REFINE_ITERS&gt;0</code>) refines EVERY seed (12 × {300 init + 150 refine}) and ranks on POST-refine <strong>sigmoid IoU</strong> — the exact metric the refinement loss optimizes (<code>sigmoid(20·(α−0.5))</code> vs the target mask). Seed count drops 48 → 12 (<code>GROUND_N_EL=2</code>, 6 az × 2 el) to keep wall-clock comparable. <strong>Validated on corl_mug_tree IMG_1089 (mug, 2026-06-04):</strong> seed 1 (visually correct) went from pre-refine IoU 0.6 → post-refine IoU <strong>0.955</strong>, now ranks first. Use this for both the mug and the black stand.</div>
+
+  <h3>5a. Per-object reference + video masks</h3>
+  <pre># split the multi-object filtered splat into one .pt per object (tracking references)
+python split_obj_probs_splat.py --splat ~/Downloads/&lt;scene&gt;/splat_obj_filtered.pt \
+    --out-prefix ~/Downloads/&lt;scene&gt;/&lt;scene&gt; --threshold 0.5          # -> &lt;scene&gt;_&lt;obj&gt;.pt
+
+# action video -> half-res 10fps mp4 + K from the SCAN's transforms.json (rotate 90 if landscape)
+ffmpeg -y -i ACTION.MOV -vf "scale=640:360,fps=10" ACTION_half.mp4
+python extract_colmap_K.py --transforms ~/Downloads/&lt;scene&gt;/transforms.json \
+    --scale 0.5 --rotate 90 --out ACTION_cam_K_half.txt
+
+# SAM3 frame-0 -> SAM2 video masks, per object (writes masks/ + overlay.mp4 to eyeball)
+python propagate_sam3_to_sam2_video.py --video ACTION_half.mp4 --prompt "mug" \
+    --out-dir ~/Downloads/outputs/&lt;scene&gt;/sam_mug_ACTION --sam3-confidence 0.2</pre>
+
+  <h3>5b. Ground plane + orbit seeds (inspect)</h3>
+  <pre># fit the table plane from the SCENE splat; objects overlaid, "level to ground" toggle
+python view_splat_ground_corl.py --port 8084
+# preview the upright orbit seeds (azimuth × elevation about the ground normal)
+python view_seed_renders_corl_mug.py --n-az 12 --n-el 4 --el-min 0 --el-max 60</pre>
+
+  <h3>5c. Ground-seeded init → full track</h3>
+  <pre># frame-0 init from ground-orbit seeds (INIT_ONLY); ranks by silhouette (RANK_SIL_W)
+bash track_corl_pour_init_ground.sh        # -> init_pose.json   (corl_pour mug: IoU 0.978)
+# full per-frame track, frame 0 loaded verbatim from that init
+bash track_corl_pour_mug.sh                # -> track_mug_*/tracked_poses.npy
+bash track_corl_pour_bowl.sh               # 2nd object, same recipe from its own init</pre>
+
+  <h3>5c-bis. Per-seed refinement recipe (corl_mug_tree, 2026-06-04)</h3>
+  <p>Two-object scene (<strong>mug + black stand</strong>) on IMG_1089 trimmed to 64 frames. Same ground-seeded init, but with the per-seed refinement architecture from the ★★ callout above. <code>REFINE_PER_SEED=1</code> + <code>REFINE_ITERS=150</code> + <code>REFINE_IOU_W=5.0</code> are baked into the wrappers; <code>INIT_SEEDS=12</code> + <code>GROUND_N_EL=2</code>.</p>
+  <pre># mug init (full 12-seed sweep, ranked on POST-refine sigmoid IoU)
+bash ~/Desktop/armlab_splat_tracking/track_corl_mug_tree_init_mug.sh
+# -> ~/Downloads/outputs/corl_mug_tree/track_mug_IMG_1089_init_ground/
+#    frame_0000_init.png, init_seeds_grid.png, seed_NN_alpha_debug.png, init_seed_ranking.json
+
+# black stand init (same recipe, separate splat + mask)
+bash ~/Desktop/armlab_splat_tracking/track_corl_mug_tree_init_stand.sh
+# -> ~/Downloads/outputs/corl_mug_tree/track_black_stand_IMG_1089_init_ground/
+
+# Debug a single seed (output goes to *_seedN/, doesn't clobber the full sweep)
+PICK=1     bash ~/Desktop/armlab_splat_tracking/track_corl_mug_tree_init_mug_seed.sh
+PICK=0,3,7 bash ~/Desktop/armlab_splat_tracking/track_corl_mug_tree_init_stand_seed.sh</pre>
+  <p>Per-seed console line now shows the pre→post-refine jump explicitly: <code>Seed 01: composite=…  PRE-ref: sIoU=0.78 hIoU=0.60  →  POST-ref: sigIoU=0.95 hIoU=0.94</code>. Each seed's <code>seed_NN_alpha_debug.png</code> is a 2×2 panel (target mask | rendered α heatmap | α&gt;0.5 mask | overlay) + threshold sweep + sanity-check vs stored values — flags <code>⚠ SOFT-IoU MISMATCH</code> / <code>⚠ HARD-IoU MISMATCH</code> if the IoU compute path ever diverges from a re-render. The standalone post-loop refinement is auto-skipped (prints "skipping post-loop refinement…") so <code>init IoU</code> at the end is just the winning seed's POST-refine pose.</p>
+
+  <h3>5d. Visualize (all objects together)</h3>
+  <pre># each object animates through its tracked poses; Frame slider + ▶ Play + synced RGB panel
+python viser_combined_trajectories.py \
+    --object "mug:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_mug.pt:~/Downloads/outputs/&lt;scene&gt;/track_mug_ACTION/tracked_poses.npy" \
+    --object "bowl:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_bowl.pt:~/Downloads/outputs/&lt;scene&gt;/track_bowl_ACTION/tracked_poses.npy" \
+    --img-id ACTION --port 8086
+# each track also writes a 2D overlay video: track_&lt;obj&gt;_ACTION/tracking.mp4</pre>
+  <p>The viewer takes repeatable <code>--object NAME:SPLAT:POSES</code> (not <code>--mug-splat</code>); RGB frames load from <code>IMG_&lt;digits&gt;_half.mp4</code> via <code>--img-id</code>. A missing ground npz falls back to the default cv→Z-up world.</p>
+
+  <h3>Tracker env knobs (this step)</h3>
+  <table>
+    <tr><th>env</th><th>effect</th></tr>
+    <tr><td><code>GROUND_SEEDS=1</code></td><td>Seed init from upright orbit views about the ground normal (replaces <code>WIDE_ROT</code>). Needs <code>GROUND_NORMAL="x,y,z"</code> (splat frame).</td></tr>
+    <tr><td><code>GROUND_N_EL</code> / <code>INIT_SEEDS</code></td><td><code>n_az = INIT_SEEDS // GROUND_N_EL</code>. With per-seed refinement use 12 seeds, N_EL=2 → 6 az × 2 el. Legacy default (no per-seed refine) was 48 / 4.</td></tr>
+    <tr><td><code>GROUND_EL_MIN/MAX</code></td><td>Elevation band (deg), default 0–60° (table-level → looking down into the object).</td></tr>
+    <tr><td><code>RANK_SIL_W</code></td><td>Up-weights silhouette in the equal-blend seed pick (default 1.0; 5.0 here — silhouette is the discriminator on symmetric objects, DINO/RGB break ties).</td></tr>
+    <tr><td><code>RANK_BY=equal_iou</code></td><td>Composite ranking metric. Under <code>REFINE_PER_SEED=1</code>, <code>iou</code> is the POST-refine <strong>sigmoid IoU</strong> (matches the refinement loss exactly); under <code>REFINE_PER_SEED=0</code> it falls back to soft raw-α IoU. Both also dump hard@0.5 as a diagnostic in <code>init_seed_ranking.json</code>.</td></tr>
+    <tr><td><code>REFINE_PER_SEED=1</code></td><td><strong>★★ default when REFINE_ITERS&gt;0.</strong> Refines every seed (not just the winner) before ranking. Stored seed pose IS the refined pose. Standalone post-loop refinement is auto-skipped.</td></tr>
+    <tr><td><code>REFINE_ITERS=150</code> / <code>REFINE_LR=0.005</code></td><td>Adam steps per seed for refinement; refinement uses target mask directly (no SAM3 intersect refresh — that's only for the post-loop variant).</td></tr>
+    <tr><td><code>REFINE_DINO_W</code> / <code>REFINE_RGB_W</code> / <code>REFINE_SIL_W</code> / <code>REFINE_IOU_W</code></td><td>Refinement loss weights. The canonical mix is <code>1.0 / 5.0 / 10.0 / 5.0</code> — soft-IoU dominates, sil and rgb keep the silhouette pinned, dino prevents flips.</td></tr>
+    <tr><td><code>DEBUG_INIT_SEEDS=1</code></td><td>Emit per-seed RGB-overlay grid (<code>init_seeds_grid.png</code>) + per-seed alpha-debug 2×2 panel (<code>seed_NN_alpha_debug.png</code>) with threshold sweep and recompute-vs-stored IoU sanity checks (flags <code>⚠ MISMATCH</code> on real bugs).</td></tr>
+    <tr><td><code>INIT_SEED_PICK=1,5,11</code></td><td>Only optimize the listed seed indices (still uses the full grid math so seed_idx → az/el cell mapping is preserved). Output dir gets a <code>_seedN</code> suffix.</td></tr>
+    <tr><td><code>USE_PRIOR_AS_FRAME0=1</code> + <code>--init-prior-pose</code></td><td>Load a saved <code>init_pose.json</code> verbatim as frame 0 (skip the seed sweep) — how the full track reuses the init.</td></tr>
+    <tr><td><code>PER_FRAME_SIL_W=1000</code> / <code>PER_FRAME_ITERS=120</code></td><td>High silhouette + 120 iters/frame holds a near-symmetric mug upright through the trajectory.</td></tr>
+  </table>
+
+  <div class="nb"><span class="lbl">Post-step (cylindrical objects):</span> if the object drifts in yaw across the trajectory, run <code>per_frame_yaw_landscape_gym_bro.py</code> → <code>refine_rotation_per_frame_gym_bro.py</code> (360° SSIM+Sobel sweep; score on <code>tracked_poses_raw.npy</code>, output on <code>tracked_poses.npy</code>).</div>
+
+  <div class="nb"><span class="lbl">Validated — corl_pour mug + bowl (IMG_9238, 2026-05-24):</span> 48 ground-orbit seeds (12 az × 4 el, el 0–60°) → mug frame-0 <strong>init IoU 0.978</strong> (the blind <code>WIDE_ROT</code> sweep mis-tilted the rim). Full 116-frame track at <code>PER_FRAME_SIL_W=1000</code> held both objects upright; mug + bowl visualized together in <code>viser_combined_trajectories.py</code>. Ground normal <code>[0.057, 0.003, 0.998]</code> fit from the scene splat. The open bowl is rotationally symmetric so its <code>WIDE_ROT</code> init sufficed (yaw unobservable), but ground-seeding is the default for anything with an asymmetry (handle, spout, logo).</div>
+
+  <div class="nb"><span class="lbl">Validated — corl_mug_tree mug + black stand (IMG_1089 trimmed @ 64, 2026-06-04):</span> 12 ground-orbit seeds (6 az × 2 el) × per-seed refinement (300 init + 150 refine each, ranked on POST-refine sigmoid IoU). Mug seed 1: <code>PRE-ref sIoU=0.78 hIoU=0.60 → POST-ref sigIoU=0.95 hIoU=0.94</code>. Under the old "rank pre-refine hard@0.5" recipe seed 1 lost to seed 15 (a broadside-but-wrong-pose seed with denser α stacks) — fixed by the per-seed-refine architecture (see ★★ callout). Scripts: <code>track_corl_mug_tree_init_{mug,stand}.sh</code> (full sweep) + <code>track_corl_mug_tree_init_{mug,stand}_seed.sh</code> (PICK=N for debugging a single seed). Output dir contains <code>frame_0000_init.png</code>, <code>init_seeds_grid.png</code>, <code>seed_NN_alpha_debug.png</code>, and <code>init_seed_ranking.json</code> (both <code>iou_soft</code> + <code>iou_hard</code> per seed).</div>
+
+  <h3>5e. Full-splat overlay on RGB (sanity)</h3>
+  <pre># rasterizes the actual Gaussians (not points) at the tracked poses, composited over the video
+python render_combined_splat_overlay.py    # -> combined_splat_overlay/combined_splat_overlay.mp4
+# (render_combined_tracker_overlay.py is the lighter point-cloud version)</pre>
+
+  <div class="figure-row">
+    <figure>
+      <img src="3dvision_assets/s5_seed_renders.jpg" alt="Ground-orbit seed renders">
+      <figcaption>Ground-seeded init candidates — the mug rendered upright from 12 azimuths × 4 elevations about the table normal. Each orbit rotation becomes a tracker seed; the silhouette-ranked winner hit init IoU 0.978.</figcaption>
+    </figure>
+    <figure>
+      <img src="3dvision_assets/s5_overlay.jpg" alt="Tracked splats composited over the RGB video">
+      <figcaption>Full-splat overlay — mug + bowl Gaussians rasterized at their tracked poses and composited over the action video, pixel-aligned to the real objects across all 116 frames.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 6 ═════════════════════════ -->
+<div class="stage" id="s6">
+  <h2><span class="num">6</span> Ground plane from the tracked objects <span class="pill headless">headless</span></h2>
+  <p class="desc">HAMER alignment, grasp height, and sim placement all need the <em>table plane in the camera/tracker frame</em>. Derive it from the objects — no monodepth, so none of single-image depth's ~5.7° tilt bias: we already have the table normal in the <em>splat</em> frame (Stage 5b RANSAC), and a <strong>stationary</strong> tracked object's per-frame pose maps splat→camera. So <code>n_camera = mean_t(R_obj(t) · n_splat)</code>, and the object's lowest extent sets the table height.</p>
+  <p class="file">Script: <code>estimate_ground_from_objects.py</code> (anchor = the stationary object; inspect with <code>view_splat_ground_corl.py</code>). Output npz schema matches <code>estimate_ground_from_video.py</code> (<code>R_align</code>, <code>t_align</code>, <code>plane_normal_tracker</code>) — drop-in for the viewer + HAMER align.</p>
+
+  <h3>Run</h3>
+  <pre># the MOVED object can't anchor it (airborne mid-trajectory); use the resting one.
+# (eyeball the tracked translation ranges to pick the stationary anchor — bowl: ~0.7 cm range)
+python estimate_ground_from_objects.py \
+    --anchor-splat ~/Downloads/&lt;scene&gt;/&lt;scene&gt;_bowl.pt \
+    --anchor-poses ~/Downloads/outputs/&lt;scene&gt;/track_bowl_ACTION/tracked_poses.npy
+# -> ground_plane_ACTION_objects.npz   (R_align, t_align, plane_normal_tracker)</pre>
+
+  <div class="nb"><span class="lbl">Why object-not-video:</span> the scan is true 3D geometry, so the plane fit is exact. On corl_pour the stationary bowl gave a per-frame normal spread of <strong>0.15°</strong> — vs the ~5.7° tilt bias every single-image monodepth (<code>estimate_ground_from_video.py</code>) carries.</div>
+
+  <div class="nb"><span class="lbl">Single-object scenes (no separate resting anchor):</span> when the only tracked object IS the manipulated one, use its <strong>pre-pickup stationary window</strong> as the anchor. Eyeball <code>tracked_poses.npy</code> translations: the first <em>K</em> frames where <code>|Δt| &lt; ~few mm</code> are the object sitting still on the table. Slice those frames into a stationary-only <code>.npy</code> and feed it to <code>--anchor-poses</code>. Validated on semantic_drill (IMG_9267, 2026-05-27): drill held within <strong>2.3 mm drift across frames 0–46</strong> before pickup at f47; that 47-frame window gave a per-frame normal spread of <strong>0.46°</strong> — looser than corl_pour's bowl (0.15°) but still ~12× better than monodepth.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 7 ═════════════════════════ -->
+<div class="stage" id="s7">
+  <h2><span class="num">7</span> HAMER hand recovery <span class="pill headless">headless</span></h2>
+  <p class="desc">Recover the demonstrator's MANO hand mesh per frame — the grasp comes from here. HAMER needs <strong>full-res</strong> frames (Detectron2 + ViTPose degrade at low res).</p>
+  <p class="file">Script: <code>run_hamer_on_video.py</code> (auto-patches the hamer namespace-package <code>__file__</code>, the Detectron2 full-image bbox fallback, and the ViTPose hand-kp confidence boost).</p>
+
+  <h3>Run</h3>
+  <pre># full-res 10fps mp4 + full-res K. NB: K scale depends on capture orientation —
+# landscape video off a portrait scan = half-K × 3 (scan 720x1280 → rot90 → ×1.5 = 1920x1080).
+ffmpeg -y -i ACTION.MOV -vf fps=10 -c:v libx264 -crf 18 ACTION_fullres_10fps.mp4
+python extract_colmap_K.py --transforms ~/Downloads/&lt;scene&gt;/transforms.json \
+    --scale 1.5 --rotate 90 --out ACTION_cam_K_full.txt
+python run_hamer_on_video.py --video ACTION_fullres_10fps.mp4 \
+    --cam-K ACTION_cam_K_full.txt --output-dir ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION
+# -> hamer_results.pkl + hamer_overlay.mp4</pre>
+
+  <figure>
+    <img src="3dvision_assets/s7_hamer.jpg" alt="HAMER hand mesh overlay on the action video">
+    <figcaption>HAMER per frame — input (left) vs the recovered MANO hand mesh (right) grasping the cup over the bowl. The manipulating right hand is detected in 112/116 frames.</figcaption>
+  </figure>
+
+  <div class="nb"><span class="lbl">Validated — corl_pour (IMG_9238):</span> right hand detected in <strong>112/116</strong> frames (conf avg 11.2/21) — the manipulating hand. Use <code>--side right</code> downstream.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 8 ═════════════════════════ -->
+<div class="stage" id="s8">
+  <h2><span class="num">8</span> Hand→mug contact alignment + auto-tune <span class="pill headless">headless</span></h2>
+  <p class="desc">HAMER's hand is in true metric meters but sits ~50 cm off the splat (monocular scale). The depth-bridge snaps it on per frame: fit an affine <code>splat_render_depth ↔ DA-V2 monodepth</code> on object pixels, then shift the hand by the residual (XY re-backprojected so it keeps HAMER's pixel projection). A constant Z-perturbation then fine-tunes finger-on-Gaussian contact.</p>
+  <p class="file">Scripts: <code>align_hamer_to_splat.py</code> (bridge + <code>--hand-z-perturb-cm</code>), <code>sweep_hand_z_perturb.py</code> (objective auto-tune). View: <code>viser_combined_trajectories.py --hamer-pkl</code>.</p>
+
+  <h3>8a. Bridge</h3>
+  <pre># splat_to_meters = real object size / splat extent (e.g. 10 cm cup / 0.2235 units ≈ 0.45).
+# poses = the MANIPULATED object's track (the hand grasps it); --side from Stage 7.
+python align_hamer_to_splat.py \
+    --pkl   ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results.pkl \
+    --splat ~/Downloads/&lt;scene&gt;/&lt;scene&gt;_mug.pt \
+    --poses ~/Downloads/outputs/&lt;scene&gt;/track_mug_ACTION/tracked_poses.npy \
+    --video ACTION_fullres_10fps.mp4 --cam-K ACTION_cam_K_full.txt \
+    --output ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results_aligned.pkl \
+    --splat-to-meters 0.45 --side right --monodepth-model base</pre>
+
+  <h3>8b. Auto-tune the contact (one pass, no align reruns)</h3>
+  <pre># the perturbation is a closed-form post-bridge shift, so sweep it analytically:
+# measures the 3 closest fingertips' distance to the nearest mug Gaussian per δ.
+python sweep_hand_z_perturb.py --dmin -10 --dmax 2 --dstep 0.5
+# -> prints gap(δ) curve + best δ; re-run 8a with --hand-z-perturb-cm &lt;best&gt;
+python align_hamer_to_splat.py ...same as 8a... --hand-z-perturb-cm -4.0</pre>
+  <div class="nb"><span class="lbl">Action-video size gotcha (added 2026-05-27):</span> <code>sweep_hand_z_perturb.py</code> back-projects HAMER's 2D keypoints with <code>cx=W/2, cy=H/2</code>. The original mug_push capture was 1920×1080, so <code>W, H</code> were hardcoded — on other videos this puts the principal point off by hundreds of pixels (~13 cm X error at typical hand depths) and slides the sweep optimum. Pass <code>--width &lt;full-res-W&gt; --height &lt;full-res-H&gt;</code> matching your video. semantic_drill (IMG_9267) ran at 1280×720 with this flag; converged cleanly to δ = −3.0 cm.</div>
+
+  <figure>
+    <img src="3dvision_assets/s8_sweep.png" alt="Contact auto-tune sweep curve">
+    <figcaption>Contact auto-tune — median distance from the 3 closest fingertips to the mug Gaussians vs the Z-perturbation δ. The raw depth-bridge (δ=0, pink) leaves a 1.15 cm gap; pulling back into the −3…−5 cm basin (green) seats the fingers at 3.9 mm. Computed in a single pass — the perturbation is a closed-form post-bridge shift, so no align reruns.</figcaption>
+  </figure>
+
+  <h3>8c. Visualize</h3>
+  <pre>python viser_combined_trajectories.py \
+    --object "mug:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_mug.pt:~/Downloads/outputs/&lt;scene&gt;/track_mug_ACTION/tracked_poses.npy" \
+    --object "bowl:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_bowl.pt:~/Downloads/outputs/&lt;scene&gt;/track_bowl_ACTION/tracked_poses.npy" \
+    --img-id ACTION --ground-npz ground_plane_ACTION_objects.npz \
+    --hamer-pkl ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results_aligned.pkl \
+    --splat-to-meters 0.45 --port 8086</pre>
+
+  <div class="nb"><span class="lbl">Why a perturbation helps:</span> the bridge matches <em>mean</em> depths, so it seats the hand at the object's center — but the grasping fingertips contact the <em>near</em> surface, ~one radius closer. So the bridged hand is systematically too deep; pull it back by ~the object radius (negative perturb).</div>
+
+  <div class="nb"><span class="lbl">Validated — corl_pour mug (IMG_9238, 2026-05-24):</span> bridge aligned <strong>98/116</strong> frames (median offset −5.4 cm). Sweep over δ∈[−10,+2] → <strong>−4.0 cm</strong> minimizes the median 3-closest-fingertip gap from 1.15 cm (raw bridge) to <strong>3.9 mm</strong> (flat basin −3 to −5). <code>splat_to_meters 0.45</code>, <code>monodepth-model base</code>, <code>backproject_xy</code> on, <code>--side right</code>.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 9 ═════════════════════════ -->
+<div class="stage" id="s9">
+  <h2><span class="num">9</span> Settled grasp → xArm gripper (Phantom/Bohg) <span class="pill headless">headless</span> <span class="pill viewer">viser</span></h2>
+  <p class="desc">Turn the contact-aligned hand into a robot grasp in two steps: (1) find the <em>settled-grasp window</em> — the contiguous frames where the wrist is fixed in the mug's <em>local</em> frame (the geometric definition of rigid contact, invariant to lift/carry/place); (2) transfer the human grasp to an xArm parallel-jaw gripper via the Phantom/Bohg mapping.</p>
+  <p class="file">Scripts: <code>find_settled_grasp.py</code> (settled window). The gripper overlay is built into <code>viser_combined_trajectories.py</code> (the <code>show xArm gripper</code> toggle) — it imports <code>phantom_align</code> + <code>drive_for_width</code> from <code>viser_hand_gripper_toggle.py</code>, so the Bohg mapping has one source of truth.</p>
+
+  <h3>9a. Settled-grasp window</h3>
+  <pre># signal: |Δ(wrist in mug-local frame)| under threshold ⇒ hand rigidly attached to the mug.
+python find_settled_grasp.py \
+    --hamer-pkl ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results_aligned.pkl \
+    --tracker-poses ~/Downloads/outputs/&lt;scene&gt;/track_mug_ACTION/tracked_poses.npy
+# -> settled window [start,end] + best frame + plot (pinch / wrist-speed / wrist-in-mug-local)</pre>
+
+  <h3>9a′. Best contact frame — parallel-jaw-aware, principled (added 2026-05-27)</h3>
+  <p>The settled-grasp window is the right answer for <em>"when is the hand rigidly attached"</em>, but it isn't always the right answer for <em>"which frame should I extract the canonical xArm gripper pose from"</em>. The downstream Phantom/Bohg mapping uses <strong>only thumb_tip + index_tip</strong> (those become the two parallel-jaws), so the best frame for gripper transfer is the one where <strong>both</strong> jaw-relevant fingers contact the object — not the one where any 3 fingertips happen to press hardest (e.g. flat-hand release moments).</p>
+
+  <p class="file">Script: <code>find_best_contact_frame.py</code>. Reads the aligned HAMER pkl + drill splat + tracker poses; emits <code>best_contact_frame.json</code> + a 4-panel diagnostic plot.</p>
+
+  <pre>python find_best_contact_frame.py \
+    --hamer-pkl ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results_aligned.pkl \
+    --splat   ~/Downloads/&lt;scene&gt;/&lt;scene&gt;_&lt;obj&gt;.pt \
+    --poses   ~/Downloads/outputs/&lt;scene&gt;/track_&lt;obj&gt;_ACTION/tracked_poses.npy \
+    --splat-to-meters &lt;stm&gt; --width &lt;full-W&gt; --height &lt;full-H&gt; \
+    --plot-out ~/Downloads/outputs/&lt;scene&gt;/best_contact_signals.png \
+    --json-out ~/Downloads/outputs/&lt;scene&gt;/best_contact_frame.json
+# -> best frame + per-jaw distances + plot (thumb/index/max + pinch + |Δwrist_local| + gates)</pre>
+
+  <h4>Metric (no tunable preferences — every term is a geometric necessity)</h4>
+  <pre>per-frame:
+  d_thumb(f) = ‖drill_Gaussians(f, cam, meters) − thumb_tip(f, meters)‖.min()
+  d_index(f) = ‖drill_Gaussians(f, cam, meters) − index_tip(f, meters)‖.min()
+  score(f)   = max(d_thumb(f), d_index(f))            ← both jaws must contact
+  smoothed(f) = median(score[f−1 : f+2])              ← reject single-frame noise
+
+gates (geometric necessity, not preferences):
+  1. closed_pinch:  pinch(f) &lt; 60 mm                  ← hand actually gripping
+  2. rigid_wrist:   |Δwrist_in_obj_local|/frame &lt; 18 mm ← rigid contact
+                                                        (same def as find_settled_grasp)
+
+best_frame = argmin smoothed(f)   subject to gate1 ∧ gate2</pre>
+
+  <p><strong>Why <code>max</code> (not mean of N closest):</strong> mean-of-N-closest rewards any frame where N fingers press the object — even when one of {thumb, index} is floating off. Empirically on semantic_drill, mean-of-3-closest argmin landed at frame 86 (a flat-hand release moment with d_thumb ≫ d_index), which is unmappable to a parallel-jaw gripper. <code>max(d_thumb, d_index)</code> picked frame 52, where <code>d_thumb = 20.4 mm</code> and <code>d_index = 19.5 mm</code> are <em>symmetric</em> — the bipolar configuration that parallel-jaw closure actually needs (one finger on each side of the handle).</p>
+
+  <div class="nb"><span class="lbl">Validated — semantic_drill / IMG_9267 (2026-05-27):</span>
+    best frame <strong>52</strong> · <code>max(d_thumb, d_index)</code> smoothed <strong>21.9 mm</strong> · pinch <strong>42.8 mm</strong> · |Δwrist_local| <strong>17.8 mm</strong> · 59/102 frames passed both gates.
+    The 20 mm per-jaw distance is the MANO-fingertip-keypoint to Gaussian-center offset (true surface-to-fingerpad contact is ~5–10 mm smaller). Cross-checked against the user's visual guess from scrubbing the viser viewer: visually-picked frame 50 vs. metric-picked frame 52 — 2-frame agreement, no eyeball tuning.</div>
+
+  <h3>9b′. Canonical gripper pose extraction — JSON handoff (added 2026-05-27)</h3>
+  <p>The viser toggle is great for <em>visual</em> verification but isn't a downstream artifact — sim-to-real / xArm IK want a machine-readable pose, not a screenshot. <code>extract_canonical_gripper_pose.py</code> consumes <code>best_contact_frame.json</code> + the aligned HAMER pkl and writes the Phantom/Bohg TCP at that single canonical frame as a JSON.</p>
+
+  <p class="file">Script: <code>extract_canonical_gripper_pose.py</code> (tyro CLI, &lt; 1 s).</p>
+
+  <pre>python extract_canonical_gripper_pose.py \
+    --scene-dir       ~/Downloads/outputs/&lt;scene&gt; \
+    --hamer-pkl       ~/Downloads/outputs/&lt;scene&gt;/hamer_ACTION/hamer_results_aligned.pkl \
+    --best-frame-json ~/Downloads/outputs/&lt;scene&gt;/best_contact_frame.json \
+    --side right
+# -> &lt;scene&gt;/canonical_gripper_pose_frame&lt;N&gt;.json</pre>
+
+  <h4>Fields written (TCP in camera frame, meters)</h4>
+  <pre>{
+  "frame":              52,
+  "jaw_width_m":        0.0428,                  ← gripper close-command at approach
+  "tcp_origin_cam_m":   [+0.031, -0.040, +0.392],← TCP origin = pinch_mid
+  "gripper_base_cam_m": [+0.191, -0.003, +0.340],← what xArm IK actually targets (= TCP − 0.172·Z)
+  "tcp_offset_m":       0.172,                   ← xArm wrist-to-TCP offset
+  "R_tcp_in_cam_3x3":   [[X], [Y], [Z]],         ← columns: X (palm normal), Y (closing), Z (approach)
+  "det_R_tcp":          +1.0000,                 ← proper-rotation sanity
+  "source_MANO_keypoints": {wrist, thumb_tip, index_tip},
+  "source_files":          {best_frame_json, hamer_pkl}
+}</pre>
+
+  <p><strong>Compose with ground_plane to put TCP in world:</strong> for sim-to-real you typically want the TCP in the table-aligned world frame, not the camera frame. Use the <code>ground_plane_*_objects.npz</code> from Stage 6:</p>
+  <pre>R_align, t_align = ground_npz["R_align"], ground_npz["t_align"]   # cam → +Z-up world, plane @ z=0
+R_tcp_world  = R_align @ R_tcp_cam
+t_base_world = R_align @ t_base_cam + t_align</pre>
+
+  <div class="nb"><span class="lbl">Validated — semantic_drill / IMG_9267 (2026-05-27):</span>
+    frame <strong>52</strong> · jaw_width <strong>42.8 mm</strong> · TCP origin (cam) <code>[+0.031, −0.040, +0.392] m</code> · gripper base <code>[+0.191, −0.003, +0.340] m</code> · <code>det(R_tcp) = +1.0000</code>. The 42.8 mm jaw width is the human pinch at approach — the robot would close past this (to ~25–28 mm) to actually grip the ~30 mm drill handle. Reproducible bit-for-bit between the inline derivation and the saved script.</div>
+
+  <h3>9b. Phantom/Bohg hand → TCP (now in the main viewer)</h3>
+  <p>Per frame, from the MANO keypoints: <code>pinch_mid = ½(index_tip + thumb_tip)</code> is the TCP origin; <code>Z_TCP = pinch_mid − wrist</code> (gripper base lands at the wrist, offset −0.172 m along +Z); <code>Y_TCP =</code> thumb→index (closing axis); <code>X_TCP = Y×Z</code>. Jaw width tracks the live pinch.</p>
+  <pre># the gripper is integrated into the combined viewer — just toggle it on:
+python viser_combined_trajectories.py \
+    --object "mug:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_mug.pt:~/Downloads/outputs/&lt;scene&gt;/track_mug_ACTION/tracked_poses.npy" \
+    --object "bowl:~/Downloads/&lt;scene&gt;/&lt;scene&gt;_bowl.pt:~/Downloads/outputs/&lt;scene&gt;/track_bowl_ACTION/tracked_poses.npy" \
+    --img-id ACTION --ground-npz ground_plane_ACTION_objects.npz \
+    --hamer-pkl ...hamer_results_aligned.pkl --splat-to-meters 0.45 --port 8086
+# GUI → check "show xArm gripper (Phantom/Bohg)", scrub to the settled frame</pre>
+
+  <div class="figure-row">
+    <figure>
+      <img src="3dvision_assets/s9_settled.png" alt="Settled-grasp diagnostic signals">
+      <figcaption>Settled-grasp signals — pinch snaps shut at the grasp (~frame 23), wrist & mug move together through the carry, and |Δwrist-in-mug-local| stays under threshold (green = settled). Longest window 86–102, best frame 94.</figcaption>
+    </figure>
+    <figure>
+      <img src="3dvision_assets/s9_gripper.png" alt="xArm gripper at the Phantom/Bohg TCP on the mug">
+      <figcaption>The xArm parallel-jaw gripper placed at the Phantom/Bohg TCP for the settled frame — fingers reaching the mug rim, jaw at the tracked ~35 mm pinch. Rendered live in the main viewer via the integrated toggle.</figcaption>
+    </figure>
+  </div>
+
+  <div class="nb"><span class="lbl">Validated — corl_pour mug (IMG_9238, 2026-05-25):</span> settled window <strong>86–102</strong> (best frame 94); the grasp is rigid from ~frame 23 (pinch 105→35 mm), so the TCP-relative-to-mug pose is constant across the window. Gripper overlay folded into the combined viewer — additive, default off, no separate script.</div>
+</div>
+
+<hr>
+
+<!-- ═════════════════════════ REFERENCE ═════════════════════════ -->
+<div class="stage" id="refs">
+  <h2><span class="num">★</span> Reference numbers + paths</h2>
+
+  <h3>Validated scene: kaizen / "laptop" (2026-05-23)</h3>
+  <table>
+    <tr><th>stage</th><th>artifact</th><th>numbers</th><th>time</th></tr>
+    <tr><td>1. ns-train dig</td><td><code>outputs/kaizen/dig/2026-05-23_145936/nerfstudio_models/step-000007999.ckpt</code></td><td>386 484 Gaussians, 64-D DINO</td><td>~20 min</td></tr>
+    <tr><td>1. export</td><td><code>~/Downloads/kaizen/splat.pt</code></td><td>same — flat dict</td><td>~10 s</td></tr>
+    <tr><td>2. SAM3+SAM2</td><td><code>~/Downloads/kaizen/segmentation/laptop/{masks, masked_rgb, overlay}/</code></td><td>350 frames; SAM3 score 0.912 on frame 0</td><td>~3 min</td></tr>
+    <tr><td>3. distill</td><td><code>~/Downloads/kaizen/splat_obj.pt</code></td><td>vis mean 111, max 350; p&gt;0.5 = 55 144 (14.3%)</td><td>~4 s</td></tr>
+    <tr><td>4. filter+save</td><td><code>~/Downloads/kaizen/splat_laptop_only.pt</code></td><td>36 817 Gaussians (9.5%) @ p≥0.8 ∧ vis≥170</td><td>~1 s</td></tr>
+  </table>
+
+  <h3>Validated scene: semantic_drill / "drill" (2026-05-27)</h3>
+  <p class="sub" style="margin:6px 0 8px">End-to-end on a Milwaukee cordless drill — 350-frame scan + 10.2 s landscape action video (IMG_9267, 1280×720, hand pickup + use). Single-object scene; extends past Stage 4 through Stages 5–6 using the single-object stationary-window pattern (see Stage 6 note).</p>
+  <table>
+    <tr><th>stage</th><th>artifact</th><th>numbers</th><th>time</th></tr>
+    <tr><td>1. ns-train dig</td><td><code>outputs/semantic_drill/dig/2026-05-27_182723/nerfstudio_models/step-000007999.ckpt</code></td><td>404 485 Gaussians, 64-D DINO</td><td>~20 min</td></tr>
+    <tr><td>1. export</td><td><code>~/Downloads/outputs/semantic_drill/semantic_drill_with_dino.pt</code></td><td>same — flat dict</td><td>~10 s</td></tr>
+    <tr><td>2. SAM3+SAM2 (scan)</td><td><code>~/Downloads/semantic_drill/segmentation/drill/{masks, masked_rgb, overlay}/</code></td><td>350 frames; SAM3 score <strong>0.979</strong> on frame 0</td><td>~3 min</td></tr>
+    <tr><td>3. distill</td><td><code>~/Downloads/semantic_drill/semantic_drill_obj.pt</code></td><td>vis mean 96.4, max 350; p&gt;0.5 = 13 322 (3.29%)</td><td>~4 s</td></tr>
+    <tr><td>4. filter+save</td><td><code>~/Downloads/semantic_drill/semantic_drill_obj_filtered.pt</code></td><td>8 780 Gaussians (2.17%) at user-dialed (Prob, Visibility)</td><td>~1 s</td></tr>
+    <tr><td>5a. half-res mp4 + K</td><td><code>~/Downloads/outputs/semantic_drill/IMG_9267_{half.mp4, cam_K_half.txt}</code></td><td>640×360 @ 10 fps, 102 frames; <code>--rotate 90 --scale 0.5</code> off the portrait scan K</td><td>~5 s</td></tr>
+    <tr><td>5a. SAM3+SAM2 (action)</td><td><code>~/Downloads/outputs/semantic_drill/sam_drill_IMG_9267/{masks, overlay.mp4}</code></td><td>102/102 masks; SAM3 score <strong>0.985</strong> on frame 0 (<code>--sam3-confidence 0.2</code>)</td><td>~1 min</td></tr>
+    <tr><td>5b. ground normal (splat)</td><td><code>view_splat_ground_drill.py</code> → <code>n_splat = [-0.007, 0.019, 1.000]</code></td><td>RANSAC dist 0.02; 7.6% inliers; drill long axis ‖ normal within 4.6°</td><td>~3 s</td></tr>
+    <tr><td>5c. ground-seeded init</td><td><code>track_drill_IMG_9267_init_ground/init_pose.json</code></td><td>48 seeds (12 az × 4 el, el 0–60°); RANK_SIL_W=5, INIT_ITERS=300</td><td>~3 min</td></tr>
+    <tr><td>5c. full track</td><td><code>track_drill_IMG_9267/tracked_poses.npy</code></td><td>102 frames @ PER_FRAME_SIL_W=1000, ITERS=120</td><td>~4 min</td></tr>
+    <tr><td>6. ground from objects</td><td><code>ground_plane_IMG_9267_objects.npz</code></td><td><code>n_cam = [0.045, -0.937, -0.345]</code>; per-frame spread <strong>0.46°</strong> (single-object stationary window, frames 0–46, drift ≤ 2.3 mm)</td><td>~2 s</td></tr>
+    <tr><td>7. HAMER (full-res)</td><td><code>hamer_IMG_9267/{hamer_results.pkl, hamer_overlay.mp4}</code></td><td><strong>97/102</strong> right-hand detections (ViTPose conf avg 13.1/21, max 21/21); 15/102 left (drop with <code>--side right</code>); person-bbox fallback used 18/102</td><td>~1.5 min</td></tr>
+    <tr><td>8a. depth bridge (initial)</td><td><code>--splat-to-meters 0.49 --monodepth-model base</code> (M18 ≈ 22 cm body / 0.446 splat-units)</td><td>79/102 frames aligned; bridge median <strong>+1.0 cm</strong>, std 7.5 cm</td><td>~25 s</td></tr>
+    <tr><td>8b. joint sweep stm × δ</td><td><code>sweep_splat_to_meters_drill.sh</code> (10 × stm in [0.40, 0.58])</td><td>median offset crosses zero at <strong>stm ≈ 0.51</strong> (drill body 22.8 cm); min gap at <strong>stm=0.52, δ=−1.0 → 7.0 mm</strong>; std flat (6.3–7.9 cm) across stm — DA-V2 noise floor, not stm-limited</td><td>~5 min</td></tr>
+    <tr><td>8a. canonical bridge</td><td><code>hamer_IMG_9267/hamer_results_aligned.pkl</code> (final)</td><td>stm=0.52, δ=−1.0; 79/102 frames; total hand Z-shift median <strong>+0.1 cm</strong> → fingertip→drill-Gaussian gap <strong>7.0 mm</strong></td><td>~25 s</td></tr>
+    <tr><td>9a′. best contact frame</td><td><code>best_contact_frame.json</code> + <code>best_contact_signals.png</code></td><td>autonomous principled pick → frame <strong>52</strong>; max(d_thumb=20.4, d_index=19.5)=21.9 mm; pinch 42.8 mm; |Δwrist_local| 17.8 mm; 59/102 frames pass gates (closed-pinch ∧ rigid-wrist). Cross-checks user's visual guess of f50 within 2 frames.</td><td>~1 s</td></tr>
+    <tr><td>9b′. canonical gripper pose</td><td><code>canonical_gripper_pose_frame52.json</code></td><td>Phantom/Bohg TCP in camera frame: jaw <strong>42.8 mm</strong>, TCP origin <code>[+0.031, −0.040, +0.392] m</code>, gripper base <code>[+0.191, −0.003, +0.340] m</code>, <code>det(R)=+1.0000</code>. Machine-readable handoff for xArm IK; compose with ground npz <code>R_align</code>/<code>t_align</code> for world frame.</td><td>&lt;1 s</td></tr>
+  </table>
+
+  <div class="nb" style="margin-top:12px"><span class="lbl">Pi3 ablation (kept for reference, not in production path):</span> a one-shot Pi3 depth pass on the same action video (<code>fp_mug_push_02_pi3.py --model pi3</code>, ~9 s on 5090) cut the per-frame bridge std from <strong>7.7 cm → 3.0 cm (−61%)</strong> and the offset range from [−27, +6] cm to [−13, +1.4] cm — Pi3's metric depth is far more frame-to-frame consistent than DA-V2's affine fit. <em>But the final fingertip gap only improved from 7.0 → 6.9 mm</em>, because at this gap range the floor is MANO geometry + per-frame tracker jitter, not bridge noise. Conclusion: DA-V2 Base is good enough for the drill grasp; Pi3 is worth the cost only when downstream (e.g. mm-precise sim-to-real grasping) needs the tighter per-frame bridge consistency.</div>
+
+  <h3>Scripts</h3>
+  <table>
+    <tr><th>script</th><th>stage</th><th>purpose</th></tr>
+    <tr><td><code>export_dig_splat.py</code></td><td>1</td><td>nerfstudio ckpt → flat-dict <code>.pt</code></td></tr>
+    <tr><td><code>segment_video_objects.py</code></td><td>2</td><td>SAM3 frame-0 + SAM2 video propagate, 1-2 prompts</td></tr>
+    <tr><td><code>distill_obj_probs_to_splat.py</code></td><td>3</td><td>per-Gaussian projection-vote → <code>obj_probs</code></td></tr>
+    <tr><td><code>scripts/render_obj_probs_at_views.py</code></td><td>3 (diag)</td><td>3-panel <code>[ INPUT | SPLAT RGB | PROB ]</code> at training cameras</td></tr>
+    <tr><td><code>view_obj_probs.py</code></td><td>4</td><td>viser viewer + filter + 💾 save</td></tr>
+  </table>
+
+  <h3>Related references</h3>
+  <ul class="compact">
+    <li><a href="PIPELINE_RUN_GUIDE.html">PIPELINE_RUN_GUIDE.html</a> — R2R2R mug-variant pipeline (downstream consumer of <code>.pt</code> splats)</li>
+    <li><a href="SAM3D_OBJECT_PIPELINE.html">SAM3D_OBJECT_PIPELINE.html</a> — single-image SAM3D variant generation (alternative source of <code>.ply</code>/<code>.obj</code> per object)</li>
+    <li>Memory: <code>reference_dataparser_applied_transform.md</code> — the camera-frame chain gotcha root cause + fix</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,542 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.8in,landscape]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{pifont}
+\usepackage{amssymb}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% result marks (coloured, no cell fill)
+\definecolor{ok}{HTML}{1B873F}
+\definecolor{bad}{HTML}{C0392B}
+\definecolor{amber}{HTML}{B7791F}
+\definecolor{notegrey}{HTML}{8A8F99}
+\newcommand{\pass}{\textcolor{ok}{\ding{51}}}
+\newcommand{\fail}{\textcolor{bad}{\ding{55}}}
+\newcommand{\bl}{\textcolor{notegrey}{--}}
+\newcommand{\nt}[1]{\,\textsuperscript{\scriptsize\textcolor{notegrey}{#1}}}
+
+% summary heat shades + eval highlight
+\definecolor{evalbg}{HTML}{E7F3EA}
+\definecolor{shade0}{HTML}{F6D8D5}
+\definecolor{shadeA}{HTML}{F8E2CE}
+\definecolor{shadeB}{HTML}{F6EFCC}
+\definecolor{shadeC}{HTML}{E6F0CC}
+\definecolor{shadeD}{HTML}{D4EFD9}
+\definecolor{shadeN}{HTML}{F2F2F4}
+
+\begin{document}
+\begin{center}\Large\textbf{Semantic Manipulation --- Evaluation Tables}\end{center}
+\noindent\footnotesize
+xArm $\cdot$ VLA ($\pi$-style) $\cdot$ datasets: coffee 1$\times$1 \& 4$\times$4,
+pouring 5$\times$3, mug-tree 5$\times$1 $\cdot$ trained at 50 / $\sim$100 / 150 demos
+(filled: coffee @50 \& @150, pouring @105, mug-tree @150). Marks: \pass{} success,
+\fail{} failure; superscript = grasp (S/T) and note numbers.\\[2pt]
+\textbf{Codes.} Cups: WB White-Basic, O Orange, Bk Black, R Red (ID); Br Brown,
+WC White-Ceramic, Gr Gray, P Pink (OOD); TWC Tall-White-Ceramic.\;
+Machines: K Keurig, Bk Black, T Teal, W White (ID); R Red, TS Tastyle, Bl Blue (OOD).\;
+Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, TB Tall, W White (OOD).
+\normalsize
+\bigskip
+
+
+\section*{Summary}
+
+% ==== Summary: success rate by condition ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Success rate by condition (VLA). Coffee shown at 50 and 150 demos to expose dataset-size scaling.}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm}C{2.15cm}C{2.15cm}C{2.15cm}C{2.15cm}C{2.15cm}}
+\toprule
+\textbf{Run} & \textbf{ID/ID} & \textbf{ID/OOD} & \textbf{OOD/ID} & \textbf{OOD/OOD} & \textbf{Overall} \\
+\midrule
+\textbf{Coffee 4x4 VLA @150} & \cellcolor{shadeC}75\% {\tiny 12/16} & \cellcolor{shadeC}67\% {\tiny 8/12} & \cellcolor{shadeC}62\% {\tiny 10/16} & \cellcolor{shadeB}42\% {\tiny 5/12} & \cellcolor{shadeC}\textbf{62\%} {\tiny 35/56} \\
+\textbf{Coffee 4x4 VLA @50} & \cellcolor{shadeB}44\% {\tiny 7/16} & \cellcolor{shadeB}58\% {\tiny 7/12} & \cellcolor{shade0}12\% {\tiny 2/16} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeA}\textbf{39\%} {\tiny 22/56} \\
+\textbf{Coffee 1x1 VLA @150} & \cellcolor{shade0}0\% {\tiny 0/16} & \cellcolor{shadeA}25\% {\tiny 3/12} & \cellcolor{shade0}6\% {\tiny 1/16} & \cellcolor{shade0}17\% {\tiny 2/12} & \cellcolor{shade0}\textbf{11\%} {\tiny 6/56} \\
+\textbf{Coffee 1x1 VLA @50} & \cellcolor{shade0}6\% {\tiny 1/16} & \cellcolor{shade0}8\% {\tiny 1/12} & \cellcolor{shade0}19\% {\tiny 3/16} & \cellcolor{shade0}17\% {\tiny 2/12} & \cellcolor{shade0}\textbf{12\%} {\tiny 7/56} \\
+\textbf{Pouring 5x3 VLA @105} & \cellcolor{shadeD}83\% {\tiny 10/12} & \cellcolor{shadeB}58\% {\tiny 7/12} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeA}25\% {\tiny 3/12} & \cellcolor{shadeB}\textbf{54\%} {\tiny 26/48} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Training runs \& dataset sizes}
+
+% ==== Training runs / dataset sizes (Model Train Baselines) ====
+\begin{table}[ht]\centering\small
+\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.2}
+\caption{Training runs and dataset sizes, cross-listed with \emph{Model Train Baselines}. Each task is trained at 50 / $\sim$100 / 150 demos; the eval-done rows match the grids in this report.}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Dataset} & \textbf{Size} & \textbf{Train} & \textbf{Done} & \textbf{Eval} & \textbf{xArm} \\
+\midrule
+Brick\_in\_Drawer & 150 & Done & Tue & -- & -- \\
+Brick\_in\_Drawer & 50 & Done & -- & -- & -- \\
+Brick\_in\_Drawer & 100 & Queued & -- & -- & -- \\
+Faucet & 50 & Queued & -- & -- & -- \\
+\rowcolor{evalbg} Mug Tree Task & 150 & Done & Tue & \textcolor{ok}{done} & $\checkmark$ \\
+Mug Tree Task & 50 & Done & Tue & -- & -- \\
+Mug Tree Task & 100 & Done & -- & -- & -- \\
+\rowcolor{evalbg} Mug/Machine 1by1 & 50 & Done & Tue & \textcolor{ok}{done} & $\checkmark$ \\
+Mug/Machine 1by1 & 100 & Training & Tue & \textcolor{bad}{no} & -- \\
+\rowcolor{evalbg} Mug/Machine 1by1 & 150 & Done & -- & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Mug/Machine 4by4 & 150 & Done & Tue & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Mug/Machine 4by4 & 50 & Done & -- & \textcolor{ok}{done} & $\checkmark$ \\
+Mug/Machine 4by4 & 100 & Done & Tue & \textcolor{bad}{no} & $\checkmark$ \\
+\rowcolor{evalbg} Pour Task & 105 & Done & Tue & \textcolor{ok}{done} & $\checkmark$ \\
+Pour Task & 50 & Done & Wed & \textcolor{bad}{no} & $\checkmark$ \\
+Pour Task & 150 & -- & -- & \textcolor{bad}{no} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Task 1 --- Cup on Coffee Machine (rows: machines, cols: cups)}
+
+% --- 150-demo dataset (note numbers: COFFEE_NOTES legend) ---
+% ==== Coffee 4x4 VLA @150 demos --- ID Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @150 demos --- ID Cup / ID Machine \,(12/16, 75\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{K} & \pass\nt{S} & \fail\nt{S} & \pass\nt{S} & \pass\nt{T} \\
+\textbf{Bk} & \pass\nt{S} & \pass\nt{S} & \fail\nt{T} & \pass\nt{S\,1} \\
+\textbf{T} & \pass\nt{T\,1} & \pass\nt{T\,3} & \pass\nt{T\,1} & \fail\nt{S} \\
+\textbf{W} & \pass\nt{T\,4} & \pass\nt{T} & \pass\nt{T\,4} & \fail\nt{T} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @150 demos --- ID Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @150 demos --- ID Cup / OOD Machine \,(8/12, 67\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{R} & \pass\nt{S} & \pass\nt{T\,1} & \pass\nt{T\,1,5} & \fail\nt{S\,6} \\
+\textbf{TS} & \pass\nt{S\,4} & \fail\nt{S} & \fail\nt{S\,7} & \fail\nt{S} \\
+\textbf{Bl} & \pass\nt{S\,1} & \pass\nt{S\,1} & \pass\nt{T} & \pass\nt{S\,2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @150 demos --- OOD Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @150 demos --- OOD Cup / ID Machine \,(10/16, 62\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{K} & \pass\nt{S\,2} & \pass\nt{S} & \pass\nt{S} & \pass\nt{S} \\
+\textbf{Bk} & \fail\nt{T\,8,9} & \pass\nt{S} & \pass\nt{S} & \fail\nt{S} \\
+\textbf{T} & \pass\nt{T\,1,2,8} & \fail\nt{S\,10} & \fail\nt{T\,1,9} & \pass\nt{S} \\
+\textbf{W} & \pass\nt{S\,2} & \fail\nt{T\,4} & \pass\nt{T\,2} & \fail\nt{S\,6} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @150 demos --- OOD Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @150 demos --- OOD Cup / OOD Machine \,(5/12, 42\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{R} & \fail\nt{S} & \fail\nt{S} & \fail\nt{T} & \pass\nt{S} \\
+\textbf{TS} & \pass\nt{S\,1} & \fail\nt{S} & \pass\nt{S\,2} & \fail\nt{S} \\
+\textbf{Bl} & \fail\nt{S\,1,7,8} & \fail\nt{S\,8} & \pass\nt{S\,1} & \pass\nt{S} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @150 demos --- ID Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @150 demos --- ID Cup / ID Machine \,(0/16, 0\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{K} & \fail\nt{T} & \fail\nt{T\,11} & \fail\nt{T} & \fail\nt{T\,11} \\
+\textbf{Bk} & \fail\nt{S\,8} & \fail\nt{T\,11} & \fail\nt{T} & \fail\nt{T\,11} \\
+\textbf{T} & \fail\nt{T\,1,7} & \fail\nt{T} & \fail\nt{T} & \fail\nt{T\,7} \\
+\textbf{W} & \fail\nt{T\,1,8} & \fail\nt{T\,11} & \fail\nt{T} & \fail\nt{S\,11} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @150 demos --- ID Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @150 demos --- ID Cup / OOD Machine \,(3/12, 25\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{R} & \pass\nt{T\,1} & \fail\nt{S} & \fail\nt{S\,11} & \fail\nt{S\,7} \\
+\textbf{TS} & \pass\nt{S} & \fail\nt{S} & \fail\nt{T\,11} & \fail\nt{T\,6} \\
+\textbf{Bl} & \pass\nt{S} & \fail\nt{S\,5} & \fail\nt{T\,11} & \fail\nt{T\,7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @150 demos --- OOD Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @150 demos --- OOD Cup / ID Machine \,(1/16, 6\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{K} & \fail\nt{T\,11} & \pass\nt{S} & \fail\nt{T} & \fail\nt{S\,7,8} \\
+\textbf{Bk} & \fail\nt{S} & \fail\nt{S} & \fail\nt{T} & \fail\nt{S} \\
+\textbf{T} & \fail\nt{S} & \fail\nt{T\,7} & \fail\nt{S\,11} & \fail\nt{S\,7} \\
+\textbf{W} & \fail\nt{T} & \fail\nt{T} & \fail\nt{T} & \fail\nt{S\,10} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @150 demos --- OOD Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @150 demos --- OOD Cup / OOD Machine \,(2/12, 17\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{R} & \fail\nt{T\,11} & \fail\nt{S} & \fail\nt{S\,7} & \fail\nt{T\,7,9} \\
+\textbf{TS} & \fail\nt{S} & \pass\nt{S} & \fail\nt{S} & \fail\nt{T} \\
+\textbf{Bl} & \pass\nt{S\,3,5} & \fail\nt{T\,7} & \fail\nt{S\,11} & \fail\nt{T\,5,7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA --- White-Basic re-run ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.2}
+\caption{Coffee 1$\times$1 VLA @150 demos --- White-Basic re-run.}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.4cm}ccl}
+\toprule
+\textbf{Machine} & \textbf{Result} & \textbf{Grasp} & \textbf{Notes} \\
+\midrule
+K & \pass & S & redo: 1st attempt F \\
+Bk & \fail & S & -- \\
+T & \pass & T & 2 \\
+W & \fail & T & 1, 7, 10 \\
+R & \pass & S & 1 \\
+TS & \pass & S & 1 \\
+Bl & \fail & T & 7, 9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% --- 50-demo dataset (note numbers: COFFEE_NOTES_50 legend) ---
+% ==== Coffee 4x4 VLA @50 demos --- ID Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @50 demos --- ID Cup / ID Machine \,(7/16, 44\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{K} & \fail\nt{S\,2} & \fail\nt{S\,2} & \fail\nt{S} & \pass\nt{S} \\
+\textbf{Bk} & \fail\nt{S\,2} & \fail\nt{S\,1} & \pass\nt{S} & \fail\nt{S} \\
+\textbf{T} & \pass\nt{S} & \pass\nt{S} & \fail\nt{S\,1} & \fail\nt{S\,1} \\
+\textbf{W} & \pass\nt{S} & \pass\nt{S} & \pass\nt{T} & \fail\nt{T\,2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @50 demos --- ID Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @50 demos --- ID Cup / OOD Machine \,(7/12, 58\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{R} & \pass\nt{S} & \pass\nt{T} & \fail\nt{S\,2} & \pass\nt{S} \\
+\textbf{TS} & \fail\nt{S\,1} & \pass\nt{S} & \pass\nt{S} & \pass\nt{S} \\
+\textbf{Bl} & \fail\nt{S\,2} & \fail\nt{S\,1} & \pass\nt{S} & \fail\nt{S\,2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @50 demos --- OOD Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @50 demos --- OOD Cup / ID Machine \,(2/16, 12\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{K} & \fail\nt{S} & \pass\nt{S} & \fail\nt{S\,5} & \fail\nt{S\,6} \\
+\textbf{Bk} & \fail\nt{T\,6} & \fail\nt{S\,2} & \fail\nt{T\,2} & \fail\nt{S\,1} \\
+\textbf{T} & \fail\nt{T\,2} & \fail\nt{S\,2} & \fail\nt{S\,2} & \fail\nt{S\,2} \\
+\textbf{W} & \fail\nt{S\,2} & \pass\nt{S} & \fail\nt{T\,2} & \fail\nt{T\,1} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA @50 demos --- OOD Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA @50 demos --- OOD Cup / OOD Machine \,(6/12, 50\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{R} & \pass\nt{S\,7} & \pass\nt{S\,7} & \fail\nt{S\,2} & \pass\nt{S} \\
+\textbf{TS} & \fail\nt{S\,2} & \fail\nt{S\,7,8} & \fail\nt{T\,2} & \fail\nt{S\,1,8} \\
+\textbf{Bl} & \pass\nt{S} & \fail\nt{S\,2,6} & \pass\nt{T\,7,9} & \pass\nt{S} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @50 demos --- ID Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @50 demos --- ID Cup / ID Machine \,(1/16, 6\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{K} & \pass\nt{T} & \fail\nt{T} & \fail\nt{S} & \fail\nt{T} \\
+\textbf{Bk} & \fail\nt{S\,1} & \fail\nt{T\,2} & \fail\nt{S\,2} & \fail\nt{S\,2} \\
+\textbf{T} & \fail\nt{T\,2} & \fail\nt{T\,2} & \fail\nt{S\,2} & \fail\nt{S\,1} \\
+\textbf{W} & \fail\nt{T\,2} & \fail\nt{S\,2} & \fail\nt{T\,2} & \fail\nt{T\,3} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @50 demos --- ID Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @50 demos --- ID Cup / OOD Machine \,(1/12, 8\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{R} & \fail\nt{T\,2} & \fail\nt{T\,2} & \fail\nt{S\,2} & \fail\nt{T\,2} \\
+\textbf{TS} & \pass\nt{T} & \fail\nt{S\,2} & \fail\nt{S\,4} & \fail\nt{S\,2} \\
+\textbf{Bl} & \fail\nt{T\,5} & \fail\nt{S\,2} & \fail\nt{S\,4} & \fail\nt{T\,2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @50 demos --- OOD Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @50 demos --- OOD Cup / ID Machine \,(3/16, 19\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{K} & \fail\nt{T\,2} & \pass\nt{S} & \fail\nt{T\,2} & \pass\nt{S} \\
+\textbf{Bk} & \fail\nt{T\,2} & \fail\nt{T\,2} & \fail\nt{T\,2} & \fail\nt{S\,2} \\
+\textbf{T} & \fail\nt{S\,2} & \fail\nt{S\,2} & \fail\nt{S\,1,2} & \fail\nt{T\,10} \\
+\textbf{W} & \fail\nt{S\,1} & \pass\nt{T\,9} & \fail\nt{T\,2} & \fail\nt{T\,1} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 1x1 VLA @50 demos --- OOD Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 1x1 VLA @50 demos --- OOD Cup / OOD Machine \,(2/12, 17\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{R} & \fail\nt{S\,2} & \pass\nt{T} & \fail\nt{T\,2} & \fail\nt{T\,2} \\
+\textbf{TS} & \fail\nt{S\,2} & \fail\nt{S\,2} & \fail\nt{T\,2} & \fail\nt{S\,5} \\
+\textbf{Bl} & \fail\nt{S\,2} & \fail\nt{S\,6} & \fail\nt{S\,2} & \pass\nt{T} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Task 2 --- Cup Pouring (rows: bowls, cols: cups)}
+
+% ==== Pouring 5x3 VLA @105 demos --- ID Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 5x3 VLA @105 demos --- ID Cup / ID Bowl \,(10/12, 83\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{BL} & \pass\nt{S} & \pass\nt{S} & \pass\nt{T\,1} & \pass\nt{S\,2} & \pass\nt{T\,3} \\
+\textbf{LB} & \pass\nt{S\,2,3} & \pass\nt{T} & \fail\nt{T} & \pass & \pass\nt{STS} \\
+\textbf{BK} & \pass\nt{S} & \pass\nt{T} & \pass & \fail & \pass\nt{T\,4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 5x3 VLA @105 demos --- ID Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 5x3 VLA @105 demos --- ID Cup / OOD Bowl \,(7/12, 58\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{P} & \pass\nt{S\,3} & \fail & \pass\nt{S} & \pass\nt{S} & \pass\nt{S\,6} \\
+\textbf{TB} & \fail & \fail\nt{7} & \fail\nt{11} & \pass\nt{T\,8} & \fail \\
+\textbf{W} & \fail\nt{11} & \pass\nt{S\,9} & \pass\nt{S} & \pass\nt{T\,8} & \pass\nt{T\,2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 5x3 VLA @105 demos --- OOD Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 5x3 VLA @105 demos --- OOD Cup / ID Bowl \,(6/12, 50\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{BL} & \fail & \fail\nt{10} & \fail\nt{11} & \pass\nt{S} \\
+\textbf{LB} & \pass\nt{S} & \pass\nt{S\,2} & \pass\nt{S} & \fail\nt{11} \\
+\textbf{BK} & \fail\nt{5,6} & \pass\nt{T\,3} & \pass\nt{S} & \fail \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 5x3 VLA @105 demos --- OOD Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 5x3 VLA @105 demos --- OOD Cup / OOD Bowl \,(3/12, 25\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{P} & \fail\nt{11} & \fail\nt{10} & \pass & \pass\nt{T\,2} \\
+\textbf{TB} & \fail\nt{11} & \fail\nt{11} & \fail\nt{11} & \fail\nt{8} \\
+\textbf{W} & \pass & \fail\nt{11} & \fail\nt{12} & \fail\nt{12} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Task 3 --- Hang Cup on Mug Tree (5 trials per cup)}
+
+% ==== Mug Tree 5x1 VLA @150 demos --- ID cups ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Mug Tree 5x1 VLA @150 demos --- ID cups.}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{0.92cm}C{0.92cm}C{0.92cm}C{0.92cm}C{0.92cm} C{1.5cm}}
+\toprule
+\textbf{Cup} & 1 & 2 & 3 & 4 & 5 & \textbf{Rate} \\
+\midrule
+\textbf{WB} & \pass & \pass & \pass & \pass & \pass & \cellcolor{shadeD}100\% {\tiny 5/5} \\
+\textbf{O} & \pass\nt{1} & \fail\nt{1,2} & \pass\nt{1} & \fail\nt{1,2} & \pass & \cellcolor{shadeC}60\% {\tiny 3/5} \\
+\textbf{Bk} & \fail\nt{3} & \fail\nt{3,4} & \fail\nt{3,4} & \fail\nt{3} & \fail\nt{3} & \cellcolor{shade0}0\% {\tiny 0/5} \\
+\textbf{R} & \pass & \pass & \pass\nt{4} & \fail\nt{3} & \pass & \cellcolor{shadeD}80\% {\tiny 4/5} \\
+\textbf{TWC*} & \fail\nt{2} & \pass & \pass\nt{1} & \fail\nt{2} & \fail\nt{3} & \cellcolor{shadeB}40\% {\tiny 2/5} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Mug Tree 5x1 VLA @150 demos --- OOD cups ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Mug Tree 5x1 VLA @150 demos --- OOD cups.}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{0.92cm}C{0.92cm}C{0.92cm}C{0.92cm}C{0.92cm} C{1.5cm}}
+\toprule
+\textbf{Cup} & 1 & 2 & 3 & 4 & 5 & \textbf{Rate} \\
+\midrule
+\textbf{Br} & \pass & \fail\nt{1,3} & \pass & \pass\nt{1} & \pass\nt{5} & \cellcolor{shadeD}80\% {\tiny 4/5} \\
+\textbf{WC} & \fail\nt{3} & \fail\nt{6} & \pass & \fail\nt{7} & \pass & \cellcolor{shadeB}40\% {\tiny 2/5} \\
+\textbf{Gr} & \pass\nt{1} & \pass\nt{1} & \pass\nt{1} & \fail\nt{2} & \fail & \cellcolor{shadeC}60\% {\tiny 3/5} \\
+\textbf{P} & \fail\nt{2} & \pass & \pass & \fail & \fail & \cellcolor{shadeB}40\% {\tiny 2/5} \\
+\textbf{Pu} & \pass & \pass & \pass & \fail & \fail\nt{2} & \cellcolor{shadeC}60\% {\tiny 3/5} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Appendix A --- Coffee 4x4 VLA @150 demos (OLD run)}
+
+% ==== Coffee 4x4 VLA OLD @150 demos --- ID Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA OLD @150 demos --- ID Cup / ID Machine \,(15/16, 94\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{K} & \pass\nt{T} & \pass\nt{S} & \fail\nt{T} & \pass\nt{T} \\
+\textbf{Bk} & \pass\nt{S} & \pass\nt{T} & \pass\nt{S} & \pass\nt{T} \\
+\textbf{T} & \pass\nt{S} & \pass\nt{S} & \pass\nt{S} & \pass\nt{T} \\
+\textbf{W} & \pass\nt{S} & \pass\nt{T} & \pass\nt{T} & \pass\nt{T} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA OLD @150 demos --- ID Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA OLD @150 demos --- ID Cup / OOD Machine \,(7/8, 88\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} \\
+\midrule
+\textbf{R} & \pass\nt{S} & \pass\nt{T} & \pass\nt{T} & \pass\nt{T} \\
+\textbf{TS} & \fail\nt{T} & \pass\nt{S} & \pass\nt{T} & \pass\nt{T} \\
+\textbf{Bl} & \bl & \bl & \bl & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA OLD @150 demos --- OOD Cup / ID Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA OLD @150 demos --- OOD Cup / ID Machine \,(16/16, 100\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{K} & \pass\nt{S} & \pass\nt{T\,O} & \pass\nt{T} & \pass\nt{S} \\
+\textbf{Bk} & \pass\nt{T} & \pass\nt{S} & \pass\nt{T} & \pass\nt{S} \\
+\textbf{T} & \pass\nt{S} & \pass\nt{S} & \pass\nt{T} & \pass\nt{S} \\
+\textbf{W} & \pass\nt{T} & \pass\nt{T} & \pass\nt{T} & \pass\nt{S} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Coffee 4x4 VLA OLD @150 demos --- OOD Cup / OOD Machine ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Coffee 4x4 VLA OLD @150 demos --- OOD Cup / OOD Machine \,(8/8, 100\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Machine} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{R} & \pass\nt{T} & \pass\nt{S\,*} & \pass\nt{T} & \pass\nt{S} \\
+\textbf{TS} & \pass\nt{T} & \pass\nt{S\,**} & \pass\nt{T} & \pass\nt{S} \\
+\textbf{Bl} & \bl & \bl & \bl & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section*{Footnote legends}
+
+\noindent\footnotesize\textbf{Coffee notes (150-demo \& OLD sheets).} \textbf{1} Pushed machine back; \textbf{2} Tilted placement and contact on plate; \textbf{3} Took double time; \textbf{4} Pushed cup while trying to grasp; \textbf{5} Dropped cup on edge of platform; \textbf{6} Self collision; \textbf{7} Spilled cup; \textbf{8} Force-torque trigger; \textbf{9} Grasped inside cup; \textbf{10} Gripper hooked on handle; \textbf{11} Cannot lift mug; \textbf{O} Completed but took > 1 min; \textbf{*} Not fully in cup holder; \textbf{**} Released while tilted\normalsize\par\medskip
+\noindent\footnotesize\textbf{Coffee notes (50-demo sheets).} \textbf{1} Spilled the cup; \textbf{2} Failed to grasp (hit cup, grasped air); \textbf{3} Hit the coffee machine; \textbf{4} Good pose, high Z; \textbf{5} Wrong grasp; \textbf{6} Torque sensor error; \textbf{7} Moved machine back; \textbf{8} Handle hooked on gripper; \textbf{9} Balancing on edge; \textbf{10} Dropped cup elsewhere\normalsize\par\medskip
+\noindent\footnotesize\textbf{Pouring notes.} \textbf{1} Bad return cup to table; \textbf{2} Went in for second pour; \textbf{3} A bit off-center for pour; \textbf{4} Tipped bowl while returning cup; \textbf{5} Started pushing cup down \& didn't move; likely F/T error; \textbf{6} Tapped bowl while placing down; \textbf{7} Picked up cup and stopped moving; \textbf{8} Tall bowl was pushed while attempting to pour; \textbf{9} Two partial pours -> completed; \textbf{10} Gripper opened while pour attempt; \textbf{11} Severely off center; \textbf{12} Tipped cup over while picking up cup; \textbf{STS} Succeeded only after trying all three grasp attempts (side -> top -> side)\normalsize\par\medskip
+\noindent\footnotesize\textbf{Mug-tree notes.} \textbf{1} Pushed the tree; \textbf{2} Hung on edge, so dropped cup; \textbf{3} Dropped mug while not on branch; \textbf{4} Tilted grasp on mug lip; \textbf{5} Hanging mug on edge; \textbf{6} Arm errored out; \textbf{7} Tried to grab entire cup\normalsize\par\medskip
+
+\end{document}

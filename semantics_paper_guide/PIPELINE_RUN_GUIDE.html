@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R2R2R Mug-Variant Pipeline — How to run</title>
+<style>
+  :root {
+    --bg: #fcfcfd;
+    --fg: #1f2430;
+    --muted: #5a6273;
+    --line: #e3e6ee;
+    --code-bg: #f3f4f8;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --amber: #d97706;
+    --amber-soft: #fef3c7;
+    --rose: #db2777;
+    --rose-soft: #fce7f3;
+    --indigo: #4f46e5;
+    --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; padding: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    color: var(--fg); background: var(--bg);
+  }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 32px 0 12px; font-size: 19px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); padding: 14px 16px; border-radius: 8px;
+    overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
+    border: 1px solid var(--line);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; vertical-align: middle;
+    margin-left: 6px; letter-spacing: 0.02em;
+  }
+  .pill.input    { background: var(--indigo-soft); color: var(--indigo); }
+  .pill.gui      { background: var(--accent-soft); color: var(--accent); }
+  .pill.headless { background: var(--amber-soft); color: var(--amber); }
+  .pill.viewer   { background: var(--rose-soft); color: var(--rose); }
+  .pill.done     { background: var(--green-soft); color: var(--green); }
+  .stage {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 24px; margin: 18px 0;
+    background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .stage h2 { margin: 0 0 6px; display: flex; align-items: baseline; }
+  .stage h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: white;
+    font-size: 13px; font-weight: 700; margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .stage .desc { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  .stage .file {
+    color: var(--muted); font-size: 12px; margin: 4px 0 10px;
+  }
+  .stage .file a { color: var(--accent); text-decoration: none; }
+  .stage .file a:hover { text-decoration: underline; }
+  .key { font-weight: 600; color: var(--fg); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
+  }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); background: var(--code-bg); }
+  td code { font-size: 0.92em; }
+  .nb {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px;
+  }
+  .nb .lbl { font-weight: 700; color: var(--accent); margin-right: 4px; }
+  .arrow {
+    text-align: center; font-size: 22px; color: var(--muted);
+    margin: -2px 0; user-select: none;
+  }
+  .toc { font-size: 13px; margin: 0 0 24px; color: var(--muted); }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  ul.compact { margin: 6px 0; padding-left: 22px; }
+  ul.compact li { margin: 3px 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  .quickstart {
+    background: linear-gradient(135deg, var(--indigo-soft) 0%, white 50%);
+    border: 1px solid var(--indigo);
+    border-radius: 12px; padding: 18px 22px; margin: 0 0 24px;
+  }
+  .quickstart h2 { margin-top: 0; color: var(--indigo); }
+  .quickstart pre { background: white; }
+  figure {
+    margin: 14px 0; padding: 0;
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+  }
+  figure img { display: block; width: 100%; height: auto; background: #000; }
+  figcaption {
+    padding: 8px 14px; font-size: 12px; color: var(--muted);
+    border-top: 1px solid var(--line); background: white;
+  }
+  .figure-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+  .figure-row figure { margin: 0; }
+  .hero {
+    background: linear-gradient(135deg, #1f2430 0%, #2a2f3d 100%);
+    border-radius: 12px; padding: 16px; margin: 0 0 24px; border: 1px solid var(--line);
+  }
+  .hero figcaption { background: transparent; color: #cfd3df; border-top: none; text-align: center; padding-top: 12px; }
+  .hero figure { background: transparent; border: none; }
+  .hero figure img { background: #000; border-radius: 6px; }
+  .datepill { background: var(--green-soft); color: var(--green); font-size: 11px; font-weight: 700;
+              padding: 2px 8px; border-radius: 999px; margin-left: 8px; letter-spacing: 0.02em; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>R2R2R Mug-Variant Pipeline</h1>
+<p class="sub">From HAMER tracker output → perturbation grasps per mug → trajectory IK → live viewer. All scripts live in <code>~/Desktop/armlab_splat_tracking/</code>; venv: <code>~/Desktop/real2render2real/.venv</code>.</p>
+
+<p class="toc">
+  <strong>Stages:</strong>
+  <a href="#sam3-batch">SAM3 → SAM3D batch (cousin generation)</a> ·
+  <a href="#s0">0. Action-video tracking (DINOv3 + WIDE_ROT)</a> ·
+  <a href="#s1">1. HAMER input</a> ·
+  <a href="#s2">2. Perturbation grasps</a> ·
+  <a href="#s3">3. IK over trajectories</a> ·
+  <a href="#s4">4. View results</a> ·
+  <a href="#s4b">4b. corl_mug → cm re-target (2026-05-24)</a> ·
+  <a href="#s5">5. Live CM perturbation</a> ·
+  <a href="#s6">6. R2R2R IsaacLabViser data-gen rollout</a> ·
+  <a href="#s6b">6b. xarm7_runner_v2 single-process cm×mug×DR (iter22+)</a> ·
+  <a href="#s7">7. Interactive live-IK viewer (home → approach → carry)</a> ·
+  <a href="#s8">8. Cousin mug → IsaacSim USD (mug_1 / mug_2 / mug_3 worked)</a> ·
+  <a href="#s8b">8b. MV-SAM3D textured CM → USD (2026-06-04)</a> ·
+  <a href="#exact">Exact commands</a> ·
+  <a href="#refs">Reference paths</a>
+</p>
+
+<div class="quickstart" id="sam3-batch">
+<h2>🪄 SAM3 → SAM3D batch — N photos → N cousin splats (2026-05-22)</h2>
+<p class="sub" style="margin:6px 0 10px">Upstream of everything below. Takes a folder of RGB photos of the same object class + one text prompt, runs SAM3 segmentation per image (model loaded once) and SAM3D 3D generation per image, and writes a folder per object containing a Gaussian-splat <code>.ply</code> and a UV-textured mesh <code>.zip</code>. Default values match this command verbatim, so the bare invocation works once <code>~/Pictures/mug_shots/</code> has images in it.</p>
+<pre># Drop RGB photos into the default input folder, then:
+bash ~/Desktop/sam3/run_batch_sam3.sh
+
+# Override any flag inline (pass-through "$@"):
+bash ~/Desktop/sam3/run_batch_sam3.sh --prompt "coffee mug" --name keurig
+bash ~/Desktop/sam3/run_batch_sam3.sh --image-dir ~/Pictures/cans --prompt can --name can
+bash ~/Desktop/sam3/run_batch_sam3.sh --skip-existing --keep-debug
+
+# Output layout (default name=mug, out-dir=~/Desktop/sam3_outputs):
+#   ~/Desktop/sam3_outputs/mug1/mug1.ply         ← Gaussian splat (~30–50 MB)
+#   ~/Desktop/sam3_outputs/mug1/mug1_mesh.zip    ← OBJ + MTL + albedo PNG
+#   ~/Desktop/sam3_outputs/mug1/sam3d.log
+#   ~/Desktop/sam3_outputs/mug2/...
+#   (FAILED_no_mask.txt if SAM3 found nothing in that image;
+#    <name>N.obj instead of _mesh.zip if SAM3D's UV bake fell through to vertex color)
+
+# Inspect any result in viser:
+PY=~/Desktop/real2render2real/.venv/bin/python
+$PY ~/Desktop/real2render2real/load_object_splat.py \
+    --splat-paths ~/Desktop/sam3_outputs/mug1/mug1.ply --viser-port 8080</pre>
+<p class="sub" style="margin:10px 0 0">Reference run (2026-05-22): 10/10 photos succeeded in ~7 min (≈40 s/object) on an idle RTX 5090. Implementation in <code>~/Desktop/sam3/batch_sam3_to_3d.py</code> (driver) + <code>~/Desktop/sam3/run_batch_sam3.sh</code> (one-line wrapper). Per-image SAM3D timeout 900 s; SAM3 loaded once and freed before SAM3D pass.</p>
+</div>
+
+<div class="quickstart">
+<h2>⚡ Minimum command sequence (per cousin mug)</h2>
+<pre>cd ~/Desktop/armlab_splat_tracking
+PY=~/Desktop/real2render2real/.venv/bin/python
+
+# 1. Open hamer viewer (defaults to nips_mug + cousin-swap dropdown)
+$PY interactive_hamer_xarm.py --mug nips_mug --port 8095
+# In GUI: Cousin mug swap → mug_X → Perturb saved grasp → Run sweep
+# Auto-saves valid grasps to mug_X/grasps/grasps_interactive_xarm.txt
+
+# 2. Pre-compute IK over (31 perturbations × all grasps × 92 frames)
+$PY /tmp/compute_mug_1_combined_ik.py    # writes mug_X/grasps/mug_X_ik_table.npz
+
+# 3. View
+$PY view_perturbation_trajectories.py --port 8099
+# In GUI: Mug variant → mug_X → Sample → Grasp → ▶ Play</pre>
+</div>
+
+<!-- ═════════════════════════ STAGE 0 ═════════════════════════ -->
+<div class="stage" id="s0">
+  <h2><span class="num">0</span> Per-frame action-video tracking <span class="pill input">input</span></h2>
+  <p class="desc">DINOv3-distilled gsplat tracker on the action video → per-frame mug SE(3) (<code>tracked_poses.npy</code>) that downstream stages consume. Validated 2026-05-18 on IMG_8720 portrait push + IMG_9122 landscape pour.</p>
+
+  <h3>Canonical recipe (fixed across scenes)</h3>
+  <p>Only 3 things vary per scene: the splat path, the SAM3 text prompt, and the capture orientation (which dictates <code>WIDE_ROT</code>). Everything else is fixed.</p>
+  <table>
+    <tr><th>Env var</th><th>Value</th><th>Why</th></tr>
+    <tr><td><code>RASTERIZER</code></td><td><code>3dgs</code></td><td>Must match splat training mode. ns-train <code>dig</code> → 3DGS; <code>2dgs-dig</code> → 2dgs. Mismatched = silently wrong renders.</td></tr>
+    <tr><td><code>INIT_SEEDS × INIT_ITERS</code></td><td><code>16 × 300</code></td><td>Frame-0 multi-start. Best seed by DINO loss wins.</td></tr>
+    <tr><td><code>INIT_RGB_W + INIT_SIL_W</code></td><td><code>5.0 + 10.0</code></td><td>D_all init loss. IoU 0.97 vs 0.67 for DINO-only on the IMG_8720 frame-0 sweep.</td></tr>
+    <tr><td><strong><code>WIDE_ROT</code></strong></td><td><code>1</code> for landscape / unusual roll<br><code>0</code> (default) for portrait scans</td><td>Swaps the 16 init seeds from <em>full-360 yaw + ±17° tilt jitter</em> to <em>4 cardinal tilts × 4 yaws</em>. Cardinal tilts = {upright, Rx=+90°, Rx=-90°, Ry=+90°}. Required when the camera roll differs from the splat scan's gravity axis.</td></tr>
+    <tr><td><code>SIGMA_TRANS + SIGMA_ROT</code></td><td><code>1.0 + 1.0</code></td><td>Light post-hoc Gaussian smoothing on raw → <code>tracked_poses.npy</code>. Tracker default 3.0/2.0 over-smooths; 0.8/0.5 jitters; 1.0/1.0 is the sweet spot.</td></tr>
+    <tr><td><code>SKIP_VISER</code></td><td><code>1</code></td><td>Required in batch/sweep scripts. Without it, viser blocks the loop after object 1.</td></tr>
+    <tr><td><code>--masks-dir</code></td><td>SAM2-propagated</td><td>Required. Tracker's internal SAM3 has hardcoded 0.5 confidence; silently drops frame 0 on novel classes.</td></tr>
+  </table>
+
+  <h3>Per-scene two-step (both in <code>~/Desktop/armlab_splat_tracking/</code>)</h3>
+  <pre># 1. SAM2 mask prep — sam3-confidence 0.2 catches novel object classes
+bash prep_&lt;scene&gt;_sam2_masks.sh
+# → ~/Downloads/outputs/&lt;scene&gt;/sam_&lt;obj&gt;/masks/ + overlay.mp4
+
+# 2. Tracker — gym_bro-style, WIDE_ROT for landscape captures
+bash track_&lt;scene&gt;_gymbro.sh
+# → ~/Downloads/outputs/&lt;scene&gt;/track_&lt;scene&gt;_gymbro/
+#     ├── tracking.mp4
+#     ├── tracked_poses_raw.npy        (per-frame Adam + outlier reject)
+#     ├── tracked_poses.npy            (above + σ=1.0 Gaussian smoothing)
+#     ├── loss_history.json
+#     └── frame_XXXX.png × N</pre>
+
+  <h3>Debug the frame-0 init grid (<code>DEBUG_INIT_SEEDS=1</code>)</h3>
+  <p>When the tracker visibly fails to converge or all 16 seeds finish in a flat ~0.4 loss band, dump the init+post-Adam grid:</p>
+  <pre>INIT_ONLY=1 DEBUG_INIT_SEEDS=1 WIDE_ROT=1 bash track_&lt;scene&gt;_gymbro.sh
+# → ~/Downloads/outputs/&lt;scene&gt;/track_&lt;scene&gt;_gymbro/init_seeds_grid.png</pre>
+  <p>The grid shows 16 cells, each with <code>(init pose | post-Adam pose | DINO loss)</code>. Best seed is highlighted green. Diagnostic reading:</p>
+  <ul>
+    <li><strong>All 16 cluster in 0.4 loss band, high IoU</strong> → splat lands in right pixel area but rotation-blind. If <code>WIDE_ROT=0</code>, flip it on. If already on, run the per-frame yaw refinement post-step.</li>
+    <li><strong>One tilt row clearly separates</strong> (e.g. 5.22 vs 7.0+) → that's the correct tilt basin. Done.</li>
+    <li><strong>All 16 high-loss + low IoU</strong> → SAM2 mask is wrong (check the prep overlay.mp4) or K is wrong.</li>
+  </ul>
+
+  <h3>Viewer (3 panels + DINO PCA toggle + σ slider)</h3>
+  <pre>python viser_mug_push_gymbro_overlay.py \
+    --run-dir ~/Downloads/outputs/&lt;scene&gt;/track_&lt;scene&gt;_gymbro \
+    --video ~/Downloads/&lt;scene&gt;_half.mp4 \
+    --cam-K ~/Downloads/&lt;scene&gt;_cam_K_half.txt \
+    --poses-file tracked_poses_raw.npy
+# Panels: 3D scene (mug splat + trajectory polyline) | RGB video | RGB + projected splat
+# Controls: smoothing σ ∈ [0, 3] (default 1.0); checkbox: color splat by DINOv3 PCA</pre>
+
+  <h3>Validated scenes (2026-05-18)</h3>
+  <table>
+    <tr><th>Scene</th><th>Splat</th><th>Capture</th><th>WIDE_ROT</th><th>Best DINO @ f0</th><th>IoU</th></tr>
+    <tr><td>IMG_8720 (push)</td><td>mug_push 3DGS, 8071 g</td><td>portrait 360×640</td><td>off</td><td>~5.50</td><td>0.967</td></tr>
+    <tr><td>IMG_9122 (pour)</td><td>mug_push 3DGS, 8071 g</td><td>landscape 640×360</td><td><strong>on</strong></td><td><strong>5.22</strong> (was 6.99 w/o)</td><td>0.917</td></tr>
+    <tr><td>IMG_8966 (mug+cm)</td><td>nips_mug + nips_cm</td><td>portrait</td><td>off</td><td>—</td><td>—</td></tr>
+    <tr><td>gym_bro_action</td><td>creatine + can</td><td>portrait</td><td>off</td><td>—</td><td>—</td></tr>
+  </table>
+
+  <h3>Post-step (cylindrical objects only)</h3>
+  <p>If yaw drifts mid-trajectory (label/text visibly rotates across frames), run the per-frame yaw refinement: <code>refine_rotation_per_frame_gym_bro.py</code> — full 360° SSIM+Sobel sweep per frame, σ=1.5 smoothing on yaw deltas. Score on <code>tracked_poses_raw.npy</code>, output on <code>tracked_poses.npy</code> (smoothed-anchor scoring breaks mask intersect). Full doc: <code>ROTATION_REFINEMENT_PIPELINE.md</code>.</p>
+
+  <div class="nb"><span class="lbl">Camera intrinsics:</span> always pull K from the scan's <code>transforms.json</code> via <code>extract_colmap_K.py --scale 0.5</code> (and <code>--rotate 90</code> for landscape captures). Hand-set K was 30% off on IMG_8966 and biased the ground plane. For IMG_9122 the K was derived by 90°-rotating the IMG_8720 portrait K (same iPhone, different orientation): <code>fx ↔ fy</code>, <code>cx_new = H_old − cy_old</code>, <code>cy_new = cx_old</code>.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 1 ═════════════════════════ -->
+<div class="stage" id="s1">
+  <h2><span class="num">1</span> HAMER tracker output <span class="pill input">input</span></h2>
+  <p class="desc">Per-frame human hand pose from the demo video, depth-bridged onto the tracked object splat so the MANO hand <strong>wraps the mug across the whole trajectory</strong>. This is the anchor every downstream gripper grasp is perturbed AROUND — and the proof the human grasp rides the moving object.</p>
+
+  <div class="hero">
+    <figure>
+      <img src="pipeline_assets/hamer_hand_on_mug_IMG9232.png" alt="MANO hand wrapped around the mug splat at the coffee-maker place pose, ground-aligned">
+      <figcaption>IMG_9232 — the depth-aligned MANO hand (magenta) wraps the tracked mug splat as it's carried to the Keurig. World is ground-plumb (refined DA-V3 plane); green = mug trajectory, red frustum = camera. Built from the <code>sil1000_it120</code> mug track + <code>--monodepth-model base</code> alignment. <span class="datepill">2026-05-23</span></figcaption>
+    </figure>
+  </div>
+
+  <table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr><td><code>~/Downloads/outputs/mug_cm/hamer_mug_cm/hamer_results_aligned_base_xy.pkl</code></td><td>Per-frame MANO hand mesh, splat-aligned in real meters</td></tr>
+    <tr><td><code>~/Downloads/outputs/img8966/tracker_poses_*.npy</code></td><td>Per-frame mug + cm SE(3) tracker poses (ground-plane aligned)</td></tr>
+    <tr><td><code>nips_mug/grasps/grasps_interactive_xarm.txt</code></td><td>13 anchor grasps on nips_mug from prior perturbation sweep</td></tr>
+  </table>
+
+  <h3 style="margin-top:18px">1c. Run HAMER end-to-end on a new scene — IMG_9232 worked example <span class="datepill">2026-05-23</span></h3>
+  <p class="desc">Four steps: full-res video → per-frame MANO → depth-bridge onto the mug splat → view. Produces the hero image above. All in <code>~/Desktop/armlab_splat_tracking/</code>, <code>PY=~/Desktop/real2render2real/.venv/bin/python</code>.</p>
+
+  <div class="figure-row">
+    <figure>
+      <img src="pipeline_assets/hamer_overlay_IMG9232.jpg" alt="HAMER 2D overlay frame 50: raw RGB vs RGB + MANO mesh">
+      <figcaption>Step 1 output (<code>hamer_overlay.mp4</code>, frame 50): raw RGB (left) vs RGB + MANO mesh (right). HUD <code>f=050 L=0 R=1</code> = right hand detected. 72/101 right-hand frames on this clip.</figcaption>
+    </figure>
+    <figure>
+      <img src="pipeline_assets/hamer_hand_on_mug_IMG9232_b.png" alt="3D hand-on-mug, alternate frame">
+      <figcaption>Step 3 result, mid-carry — the same hand in the ground-plumb 3D scene, riding the mug between table and Keurig. Free-hand mode (raw per-frame aligned verts).</figcaption>
+    </figure>
+  </div>
+
+<pre># 0. Full-res 10 fps mp4 + K  — HAMER fails at half-res (Detectron2 + ViTPose).
+#    K_full = 2 × every (fx, fy, cx, cy) of the half-res K.
+ffmpeg -i ~/Downloads/IMG_9232.MOV -vf fps=10 -c:v libx264 -crf 18 ~/Downloads/IMG_9232_fullres_10fps.mp4
+# → write ~/Downloads/IMG_9232_cam_K_full.txt (2× the half values)
+
+# 1. HAMER per frame → hamer_results.pkl + hamer_overlay.mp4
+$PY run_hamer_on_video.py \
+    --video ~/Downloads/IMG_9232_fullres_10fps.mp4 \
+    --cam-K ~/Downloads/IMG_9232_cam_K_full.txt \
+    --output-dir ~/Downloads/outputs/img9232/hamer_IMG_9232
+
+# 2. Depth-bridge align onto the mug splat + its tracked poses → hand sits ON the mug
+$PY align_hamer_to_splat.py \
+    --pkl   ~/Downloads/outputs/img9232/hamer_IMG_9232/hamer_results.pkl \
+    --splat ~/Downloads/outputs/final_mug_cm/state_rigid_20260522_164504.pt \
+    --poses ~/Downloads/outputs/final_mug_cm/track_mug_IMG_9232_sil1000_it120/tracked_poses.npy \
+    --video ~/Downloads/IMG_9232_fullres_10fps.mp4 --cam-K ~/Downloads/IMG_9232_cam_K_full.txt \
+    --output ~/Downloads/outputs/img9232/hamer_IMG_9232/hamer_results_aligned_base_xy.pkl \
+    --splat-to-meters 0.748 --monodepth-model base
+# [diag] aligned 72/101 frames, hand_offset: median=-4.1 cm, std=8.1 cm
+
+# 3. View: hand on the moving mug, in the ground-plumb world
+$PY viser_combined_trajectories.py --port 8080 --img-id IMG_9232 \
+    --ground-npz ~/Downloads/outputs/img9232/ground_plane_IMG_9232_dav3.npz \
+    --splat-to-meters 0.748 \
+    --hamer-pkl ~/Downloads/outputs/img9232/hamer_IMG_9232/hamer_results_aligned_base_xy.pkl \
+    --object mug:~/Downloads/outputs/final_mug_cm/state_rigid_20260522_164504.pt:~/Downloads/outputs/final_mug_cm/track_mug_IMG_9232_sil1000_it120/tracked_poses.npy \
+    --object coffee_maker:~/Downloads/outputs/final_mug_cm/state_rigid_20260522_164538.pt:~/Downloads/outputs/final_mug_cm/track_coffee_maker_IMG_9232_sil1000_it120/tracked_poses.npy</pre>
+
+  <table>
+    <tr><th>Knob</th><th>Value / why</th></tr>
+    <tr><td><code>full-res 10 fps</code></td><td>HAMER's Detectron2 + ViTPose perform poorly at 360×640. The MOV is 1280×720@30 → fps=10 gives ~101 frames matching the half-res tracker.</td></tr>
+    <tr><td><code>--monodepth-model base</code></td><td>DA-V2 <strong>Base</strong>, not Indoor-Large — Indoor-Large throws depth outliers on the hand band (see <code>reference_hamer_alignment.md</code>). <code>backproject_xy=True</code> (default) re-projects X,Y at the corrected Z instead of RSRD's buggy Z-only.</td></tr>
+    <tr><td><code>--splat-to-meters 0.748</code></td><td><strong>Must match between align + view.</strong> 0.748 is the proven nips-mug value (from <code>mug_cm</code>'s pkl); geometric estimate ≈ 0.606 (extent 0.158 ÷ ~0.096 m). A/B the two if the hand looks over/under-sized for the mug.</td></tr>
+    <tr><td><code>side = right</code></td><td>Read from the pkl's <code>alignment_meta</code>; this clip is 72 right / 5 left → right is the manipulating hand.</td></tr>
+  </table>
+
+  <div class="nb"><span class="lbl">Free-hand vs rigid-attach:</span> the command above is <strong>free-hand</strong> (per-frame aligned verts — shows the real depth-bridge quality, slight ±cm jitter, and the ~29 unaligned frames pop). For a <em>clean</em> "hand glued to the mug" view for grasp authoring, use <strong>rigid-attach</strong> (<code>--rigid-attach-to mug --settled-frame N</code>), currently only in the <code>viser_combined_trajectories_pour.py</code> sibling.</div>
+
+  <div class="nb"><span class="lbl">Older wrappers:</span> per-scene <code>run_hamer_IMG_*.sh</code> exist (9151 / 9157 / 9163 protein-shake, etc.) as templates. Existing aligned pkls: nips <code>mug_cm</code> (s=0.748), <code>mug_push</code> IMG_8720 (s=0.4).</div>
+
+  <h3 style="margin-top:18px">1b. Sanity-check HAMER alignment in 3D against the splat trajectory</h3>
+  <p class="desc">Before trusting the HAMER pkl downstream, render the per-frame hand mesh alongside the splat trajectory in viser. This catches scale-mismatch and per-frame depth-alignment jitter early.</p>
+  <p class="file">Script: <a href="../viser_combined_trajectories_pour.py">viser_combined_trajectories_pour.py</a> (or any <code>viser_combined_trajectories_*.py</code> sibling — they all accept the same HAMER flags).</p>
+
+  <p class="key"><strong>Critical: pass <code>--splat-to-meters</code> matching the pkl's <code>alignment_meta</code></strong>. HAMER verts are in real meters; splat + tracker poses are in splat units. Read the scale from the pkl:</p>
+<pre>$PY -c "import pickle; \
+  m = pickle.load(open('~/Downloads/outputs/pour/hamer_IMG_9169/hamer_results_aligned_base_xy.pkl','rb'))['alignment_meta']; \
+  print(m)"
+# → {'splat_to_meters': 0.4, 'side': 'right', 'n_aligned': 83}</pre>
+
+  <p class="key"><strong>Free-hand mode</strong> — per-frame HAMER vertices (uses each frame's raw aligned detection; shows alignment quality directly):</p>
+<pre>$PY viser_combined_trajectories_pour.py --port 8084 \
+    --splat-to-meters 0.4 \
+    --hamer-pkl ~/Downloads/outputs/pour/hamer_IMG_9169/hamer_results_aligned_base_xy.pkl \
+    --hand-side right</pre>
+
+  <p class="key"><strong>Rigid-attach mode</strong> — snap hand to a chosen object at a settled frame, then follow that object's pose. Stable visualization + the canonical hand-pose for downstream grasp authoring:</p>
+<pre>$PY viser_combined_trajectories_pour.py --port 8084 \
+    --splat-to-meters 0.4 \
+    --hamer-pkl ~/Downloads/outputs/pour/hamer_IMG_9169/hamer_results_aligned_base_xy.pkl \
+    --hand-side right \
+    --rigid-attach-to mug --settled-frame 20</pre>
+
+  <p class="key">Picking <code>--settled-frame</code>:</p>
+  <ul class="compact">
+    <li>Scrub frames in free-hand mode until the hand sits cleanly on the contact object. That index is the settled frame.</li>
+    <li>Or programmatic: dump per-frame HAMER hand-Z and tracker mug-Z, pick the frame where they minimize disagreement and the hand is firmly grasping (early in the trajectory, after pickup).</li>
+    <li>Free-hand mode will look jittery because DA-V2 monodepth is noisy frame-to-frame (e.g. IMG_9169 mug: Z jumps from 0.29m → 6.5m → 1.18m across frames). The pkl is only depth-aligned reliably for a subset (<code>n_aligned</code> in the meta).</li>
+  </ul>
+
+  <div class="nb"><span class="lbl">A/B compare two alignments:</span> pass a second pkl via <code>--hamer-pkl-b &lt;path&gt;</code>; rendered in cyan vs the primary in warm-beige. Use to compare alignment recipes (e.g. DA-V2 Base vs Indoor-Large, or pre/post the X,Y re-back-project fix from <code>reference_hamer_alignment.md</code>).</div>
+
+  <div class="nb"><span class="lbl">Frame range:</span> the viewer auto-truncates to <code>min(len(p["poses"]) for p in payloads)</code>, so if your tracker output has fewer frames than the HAMER pkl (e.g. tracker was truncated to first N frames), the slider clamps to <code>N</code> automatically — no need to truncate the pkl.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 2 ═════════════════════════ -->
+<div class="stage" id="s2">
+  <h2><span class="num">2</span> Perturbation grasps per mug variant <span class="pill gui">GUI viewer</span></h2>
+  <p class="desc">Sweep small position+rotation perturbations around the HAMER-anchored grasps; auto-save only the antipodal + collision-free ones (🟢 green). Run for each of the 5 mugs.</p>
+  <p class="file">Script: <a href="interactive_hamer_xarm.py">interactive_hamer_xarm.py</a></p>
+
+<pre>$PY interactive_hamer_xarm.py --mug nips_mug --port 8095</pre>
+
+  <p class="key">In the GUI:</p>
+  <ul class="compact">
+    <li><strong>Cousin mug swap</strong> dropdown → pick the mug you want grasps for (<code>mug_1</code>, <code>mug_2</code>, etc.)</li>
+    <li><strong>Saved grasp</strong> dropdown → pick a nips_mug anchor seed</li>
+    <li><strong>Perturb saved grasp</strong> folder → set <code># samples</code>, <code>pos jitter</code>, <code>rot jitter</code>, <code>auto-save valid ✓</code></li>
+    <li><strong>▶ Run perturbation sweep</strong> → every valid (🟢 antipodal + collision-free) sample is appended to <code>&lt;mug&gt;/grasps/grasps_interactive_xarm.txt</code> in the cousin's own viser frame</li>
+    <li><strong>👁 All-grasps overlay</strong> → toggle to see all source + cousin grasps as ghost grippers, color-coded by validity on the displayed mesh</li>
+  </ul>
+
+  <div class="nb"><span class="lbl">Color code on the gripper:</span>
+    🟢 GREEN = valid (clear + antipodal) ·
+    🟡 YELLOW = collision but antipodal ·
+    🔵 BLUE = clear but not antipodal ·
+    🔴 RED = neither
+  </div>
+
+  <p class="hint">Frame fix (2026-05-15): saves now convert primary-viser → cousin viser before writing, so grasps are always in the cousin's own coordinates regardless of which mug is the "primary" launch.</p>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 3 ═════════════════════════ -->
+<div class="stage" id="s3">
+  <h2><span class="num">3</span> IK over trajectories <span class="pill headless">headless</span></h2>
+  <p class="desc">For each mug, sweep R2R2R warm-start IK across <strong>31 mug-pose perturbations × G grasps × 92 frames</strong> from the <code>s_tier</code> joint seed. Saves a per-cousin IK table that the viewer loads instantly.</p>
+
+  <table>
+    <tr><th>Script</th><th>Use case</th></tr>
+    <tr><td><code>/tmp/compute_all_cousin_ik.py</code></td><td>Sweep all 4 cousins (mug_1, mug_2, mug_3, sam_mug1) using only their own native grasps</td></tr>
+    <tr><td><code>/tmp/compute_mug_1_combined_ik.py</code></td><td>Sweep mug_1 with COMBINED pool (cousin's native grasps + nips_mug's 13 grasps in body frame). <strong>Recommended</strong> — gives more grasps + cluster-check diagnostic before IK</td></tr>
+  </table>
+
+<pre>$PY /tmp/compute_mug_1_combined_ik.py
+# Output: mug_1/grasps/mug_1_ik_table.npz
+# Stores: joints, ee_world, results_grid, dq_grid, floor_grid, T_grasp_body, grasp_source</pre>
+
+  <p class="key">What it does per (sample, grasp):</p>
+  <ul class="compact">
+    <li>Re-warps the demo trajectory for the perturbed mug start</li>
+    <li>Computes EE target per frame: <code>T_world_eef(t) = traj(t) @ T_grasp_body @ trans(0,0,−TCP_OFFSET)</code></li>
+    <li>Warm-start IK 92 frames from <code>s_tier</code> with <code>solve_ik(use_manipulability=True, max_iterations=80)</code></li>
+    <li>Records pos/rot err, ground floor min Z, joint Δ-step (smoothness)</li>
+  </ul>
+
+  <p class="hint">Runtime: ~14 min per mug for an 18-grasp combined pool (558 IK chains × 92 frames). 5–7 min for cousin-only pools.</p>
+
+  <div class="nb"><span class="lbl">Reference results — mug_1 (combined 18-grasp pool):</span>
+    nips_mug grasps: <strong>381/403 perfect (95%)</strong> · mug_1 grasps: <strong>126/155 perfect (81%)</strong>. Mean reach 92/92 with 0.0 mm pos err for the converging cases.
+  </div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 4 ═════════════════════════ -->
+<div class="stage" id="s4">
+  <h2><span class="num">4</span> View trajectories <span class="pill viewer">viewer</span></h2>
+  <p class="desc">Final viewer — swap mug variant, swap CM variant, scale CM, replan IK on demand. All pre-computed IK tables load on startup so playback is instant.</p>
+  <p class="file">Script: <a href="view_perturbation_trajectories.py">view_perturbation_trajectories.py</a></p>
+
+<pre>$PY view_perturbation_trajectories.py --port 8099
+# → http://localhost:8099</pre>
+
+  <p class="key">Controls (in the 🎯 Perturbation viewer folder):</p>
+  <ul class="compact">
+    <li><strong>Sample</strong> — 1 baseline + 30 random ±5 cm XY / ±15° yaw mug perturbations (pre-computed)</li>
+    <li><strong>Mug variant</strong> — nips_mug · mug_1 · mug_2 · mug_3 · sam_mug1 (label shows grasp count). mug_1 has 18 = 5 native + 13 nips_mug combined</li>
+    <li><strong>Grasp</strong> — index into the active mug's grasp pool</li>
+    <li><strong>CM variant</strong> — nips_cm · cm_1 · cm2 · cm4 · cm8 · mvsam3d_cm</li>
+    <li><strong>CM scale</strong> + <strong>CM anchor</strong> (Z-scale-anchor-bottom / Uniform / placement-XYZ-match) — applies a Z-lift to the goal</li>
+    <li><strong>CM Δx / CM Δy</strong> sliders (±15 cm) + <strong>CM Δyaw</strong> slider (±45°) — <strong>live preview</strong>: cm splat moves immediately on slider drag (rotates around its own centroid, translates in world XY). No replan needed to see it move.</li>
+    <li><strong>Frame</strong> + <strong>▶ Play</strong> — animate mug + arm together</li>
+    <li><strong>🔁 Replan IK with CM perturbation + Z-lift</strong> — re-runs IK for the current (sample, grasp) using the live CM (Δx, Δy, Δyaw) AND the Z-lift from the anchor mode. Trajectory warps to end at the perturbed CM pose; mug-on-cm landing is preserved via <code>T_mug_in_cm_end</code>.</li>
+  </ul>
+
+  <p class="hint">Polylines show per-grasp EE trajectories color-coded; 🟢 PERFECT-only filter available in <strong>👁 Polyline visibility</strong>.</p>
+
+  <div class="nb"><span class="lbl">Status reporting:</span> every replan emits to BOTH the GUI <code>replan_status</code> text AND the terminal log:
+  <pre style="margin: 8px 0 0 0;">[replan] sample=0 grasp=3 cm=cm2 S=2.00  cmΔ=(dx=+0.050,dy=-0.030,dz=+0.038,dyaw=+12.0°)  src=semantic mask
+[replan] DONE [mug_1] reach 92/92  med-pos 0.0mm  in 6.8s</pre>
+  </div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 4b (corl_mug re-target) ═════════════════════════ -->
+<div class="stage" id="s4b">
+  <h2><span class="num">4b</span> corl_mug → cm perturbation-IK (re-target of 3+4) <span class="pill headless">headless</span><span class="pill viewer">viewer</span><span class="datepill">2026-05-24</span></h2>
+  <p class="desc">
+    Stages 3+4 re-pointed from the old <code>nips_mug</code> canonical to <strong>corl_mug</strong>, using the
+    IMG_9232 <code>sil1000_it120</code> corl→coffee-maker demo + the 16 SAM3D cousins (each aligned via
+    <code>&lt;cousin&gt;_to_corl_mug_aligned.pt</code> with grasps transferred from corl_mug + 180° gripper flips).
+    The old <code>/tmp/compute_*_ik.py</code> were one-offs and are gone; these are permanent scripts in
+    <code>~/Desktop/armlab_splat_tracking/</code>. Key simplifier: <code>corl_mug.pt</code> (and its <code>stage2/splat_viewable.pt</code>)
+    symlink the exact splat the mug was tracked against, so the demo is natively in corl_mug's body frame
+    (the nips stage2↔state_rigid Umeyama collapses to identity).
+  </p>
+
+  <h3>Scripts (run in order)</h3>
+  <pre>PY=~/Desktop/real2render2real/.venv/bin/python
+cd ~/Desktop/armlab_splat_tracking
+
+# 1. Build the trajectory npz (geometry only) — 31 mug-start perturbations, metric, ground-plumb.
+$PY build_corl_cm_trajectory.py                       # default 31 samples
+$PY build_corl_cm_trajectory.py --n-samples 1         # baseline only (fast Phase-0 gate)
+$PY build_corl_cm_trajectory.py --cm-closer-cm 10     # move cm 10cm toward the arm (rel-pose preserved)
+#   → corl_mug/perturb_sweep_trajectories.npz: samples, traj_mug(S,Nt,4,4), T_arm, T_cm_static,
+#     T_mug_in_cm_end, M_ground, q_seed, scale_to_m
+
+# 2. Batch IK per mug → &lt;mug&gt;/grasps/&lt;mug&gt;_ik_table.npz  (joints, ee_world, results_grid, T_grasp_body, ...)
+$PY compute_cousin_ik_tables.py --mug corl_mug --only-sample 0 --seed-pose home   # Phase-0 gate
+$PY compute_cousin_ik_tables.py --mug corl_mug --only-sample 0 --only-grasp 31    # one grasp, fast
+$PY compute_cousin_ik_tables.py --skip-existing                                   # all 16 mugs, all samples (resumable)
+#   flags: --seed-pose {s_tier,home,&lt;saved-name&gt;}  --out-suffix _home  --baseline-prune 0.9
+
+# 3. Viewer (focused; companion to view_perturbation_trajectories.py, not a replacement)
+$PY view_corl_perturbation.py --port 8099                 # IK: mug/sample/grasp dropdowns, perfect-only, ▶Play (speed slider)
+$PY view_corl_perturbation.py --port 8099 --no-ik         # scene-only (no IK tables needed): mug rides traj + cm + arm@home
+$PY view_corl_perturbation.py --port 8099 --no-ik --no-arm  # just the mug + cm trajectory
+
+# 4. Export real-robot joint trajectories (home prepended as frame 0; rad + deg; json + npy)
+$PY export_robot_joints.py --table corl_mug/grasps/corl_mug_ik_table_home_s0.npz --sample 0 --grasp 31
+#   → ~/Downloads/outputs/corl_robot_joints/corl_grasp31_sample0.{json,npy}</pre>
+
+  <h3 style="margin-top:18px">Frame-chain fixes (each was a real bug — keep them)</h3>
+  <table>
+    <tr><th>Fix</th><th>Why / symptom</th></tr>
+    <tr><td><span class="key">splat→meters scale</span> <code>SCALE_TO_M = REAL_MUG_HEIGHT / corl_extent ≈ 0.633</code>, applied to traj <em>and</em> grasp-body translations</td>
+        <td>corl_mug.pt is raw splat units (mug extent 0.158, not centered) — the trajectory was ~1.67× too big, 60/101 frames past the arm's 0.7 m reach (reach 64/101). After scaling: <strong>reach 101/101</strong>.</td></tr>
+    <tr><td><span class="key">mug-bottom ground-snap</span> (not cm-bottom)</td>
+        <td>Snapping the cm bottom to z=0 floated the mug ~0.4 m up, so the arm (z=0) reached UP at it. Snap the mug's lowest 1% to z=0 (matches <code>viser_combined_trajectories</code>) → arm + mug + cm coplanar.</td></tr>
+    <tr><td><span class="key">arc-length warp</span> <code>warp(..., w_mode="arclength")</code></td>
+        <td>Time-smoothstep <code>w(t)</code> lags the demo's early settle, so an end-shift (cm-closer) parked the mug PAST the goal (extra +y / −x) before converging. Driving <code>w</code> by demo arc-length makes <code>w=1</code> when the demo reaches its end → settle frames sit exactly at the goal (overshoot a few cm → <strong>0.1 cm</strong>).</td></tr>
+    <tr><td><span class="key">cm-closer preserves rel-pose; place-standoff does NOT</span></td>
+        <td><code>--cm-closer-cm</code> shifts cm + mug-end together → final mug-to-cm pose unchanged (= demo <code>T_mug_in_cm_end</code>). A place-standoff (backing only the mug) breaks that — don't use it to "fix" the mug sitting inside the cm blob (that's the demo's real under-spout placement; the cm splat just has no hollow tray).</td></tr>
+    <tr><td><span class="key">cm covariance via node transform</span></td>
+        <td>In the viewer, pose the cm splat with <code>wxyz</code>/<code>position</code> — baking rotation into the means but not the covariance renders spiky gaussians.</td></tr>
+  </table>
+
+  <div class="nb"><span class="lbl">Robot home seed:</span> <code>--seed-pose home</code> warm-starts IK from <code>deg2rad([0,−30,0,30,0,60,0])</code> and the export prepends it as frame 0, so the real arm starts at home → grasp → carry → place. Feasibility is comparable to s_tier (corl_mug sample 0: 14/60 vs 16/60 perfect) but more realistic. <strong>Watch the home→grasp (f0→f1) step</strong> — it can be a large move (joint 5 can swing ~137°); command that first segment slowly or interpolate.</div>
+
+  <p class="hint">Reference: corl_mug sample 0 = <strong>16/60</strong> grasps perfect (s_tier) / <strong>14/60</strong> (home) on the corrected ground; full 16-mug sweep ~4–5 h with <code>--baseline-prune</code>. Memory: <code>project_corl_perturbation_ik.md</code>.</p>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ═════════════════════════ STAGE 5 ═════════════════════════ -->
+<div class="stage" id="s5">
+  <h2><span class="num">5</span> Live CM-pose perturbation — the data-gen multiplier <span class="pill viewer">viewer</span></h2>
+  <p class="desc">Adds a 4th randomization axis on top of (mug perturbation, mug variant, grasp). Demos the goal-pose-augmentation idea: scrub CM Δx/Δy/Δyaw → cm visibly moves → click Replan → trajectory IK adapts. Each combo of (mug variant, grasp, mug perturbation, CM perturbation, CM scale) is a unique trajectory for downstream data-gen.</p>
+
+  <p class="key">Why it works without breaking the IK basin:</p>
+  <ul class="compact">
+    <li>The mug trajectory's end is anchored to the CM via <code>T_mug_in_cm_end</code> (extracted from the demo's last 8 frames). Perturbing CM moves the trajectory's end target by the same SE(3).</li>
+    <li>The smoothstep blend between (perturbed start) and (perturbed end) keeps mid-trajectory motion shape.</li>
+    <li>The <code>s_tier</code>-seeded warm-start IK has a wide enough basin that ±15 cm + ±45° yaw of CM perturbation typically still converges 92/92 (verify via the post-replan reach number).</li>
+  </ul>
+
+  <p class="key">Math (per slider tick, no IK):</p>
+  <pre>R_yaw = Rot.from_euler("Z", cm_dyaw, degrees=True).as_matrix()
+new_node_R   = R_yaw · orig_node_R                              # rotate splat
+new_node_pos = R_yaw · (orig_pos − pivot) + pivot + (dx, dy, 0) # translate around pivot
+# pivot = cm centroid in world (T_cm_static.t for FAST path; centers.mean(0) for baked paths)</pre>
+
+  <p class="hint">Skybox in use: <code>~/Desktop/real2render2real/data/assets/skyboxes/lab2.jpg</code> (originally from <code>~/Downloads/lab2.JPG</code>). Update via the <code>SKYBOX = Path(...)</code> constant near the top of <code>view_perturbation_trajectories.py</code>.</p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">CM Z-scale sweet spots (2026-05-18 sweep)</h3>
+  <p class="desc">
+    For each cm variant, the perturb viewer auto-applies the recommended
+    Z-anchor scale on dropdown change (baked into <code>CM_RECOMMENDED_Z_SCALE</code>
+    in <code>view_perturbation_trajectories.py</code>). The values minimize
+    mid-flight collision (frames 5..55, mug Gaussians within 5 mm of cm).
+    Computed by <code>find_cm_scale_sweet_spots.py</code>; full per-scale CSV
+    at <code>/tmp/cm_scale_sweep.csv</code>.
+  </p>
+  <table>
+    <tr><th>cm variant</th><th>recommended Z-scale</th><th>mid % @ recommend</th><th>mid&lt;0.5% range</th><th>mid&lt;2% range</th><th>notes</th></tr>
+    <tr><td><code>nips_cm</code></td><td><strong>1.00</strong></td><td>3.98%</td><td>none</td><td>none</td><td>geometry: arc clips body; best-of-bad</td></tr>
+    <tr><td><code>cm_1</code></td><td><strong>1.10</strong></td><td><strong>0.00%</strong></td><td>1.10–1.30</td><td>1.10–1.70</td><td>cleanest cousin; wide safe band</td></tr>
+    <tr><td><code>cm2</code></td><td><strong>1.70</strong></td><td><strong>0.22%</strong></td><td>1.70 only</td><td>1.70–2.30</td><td>tall upright body; needs S≥1.7 to clear arc</td></tr>
+    <tr><td><code>cm4</code></td><td><strong>1.10</strong></td><td><strong>0.00%</strong></td><td>1.10–1.70</td><td>1.10–2.30</td><td>widest safe band</td></tr>
+    <tr><td><code>cm8</code></td><td>2.70</td><td>3.88%</td><td>none</td><td>none</td><td>geometry: cm shape always clips arc</td></tr>
+    <tr><td><code>mvsam3d_cm</code></td><td>1.00</td><td>—</td><td>—</td><td>—</td><td>no sweep yet; manual tune</td></tr>
+  </table>
+  <p class="hint">
+    Mug end-frame contact ("end-frac") is high (10-26%) for cm2/cm8 because they
+    have no open tray cavity — the mug lands inside the cm body at every scale.
+    That's a cm-shape limitation, not a scale issue. nips_cm / cm_1 / cm4 have
+    end-frac ≈ 3-5% (clean tray contact).
+  </p>
+</div>
+
+<!-- ═════════════════════════ STAGE 6b (xarm7_runner_v2 single-process) ═══════════════════════ -->
+<div class="stage" id="s6b">
+  <h2><span class="num">6b</span> IsaacSim data-gen — single-process cm × mug × DR cycling (xarm7_runner_v2, iter22+) <span class="pill headless">headless</span></h2>
+  <p class="hint" style="margin-top: -6px; margin-bottom: 12px;">
+    Supersedes Stage 6's R2R2R IsaacLabViser data-gen rollout for cm/mug variant sweeps — same captured outputs (rgb / depth / seg / h5 / npz / mp4), 8.7× faster (single process vs. per-cm restart), and adds native CM-pool cycling.
+  </p>
+  <p class="desc">
+    Once cousin grasps + IK tables exist (Stages 1–3) and the trajectory replan looks clean in the viewer (Stages 4–5), feed the lot into <code>scripts/xarm7_runner_v2.py</code> for batched episode capture in IsaacSim 5. iter22 added <code>--cm-pool</code> so a SINGLE process cycles both cm and mug variants (OUTER-cm INNER-mug) with full env DR per ep — no per-cm restart overhead. iter21 fixed a <code>sim_app.close()</code> hang that previously blocked shell-loop sweeps.
+  </p>
+
+  <p class="key">Indexing (when both pools are set):</p>
+  <pre>ep_idx → (cm[ep_idx // len(MUG_POOL)] , mug[ep_idx % len(MUG_POOL)])
+# 4 cms × 4 mugs:  ep_00 = cm[0]·mug[0]   ep_04 = cm[1]·mug[0]   ep_15 = cm[3]·mug[3]</pre>
+
+  <p class="key">Why single-process works (mid-run hot-swap mechanism):</p>
+  <ul class="compact">
+    <li>Pre-stage every variant at scene-build: <code>/World/Mug_&lt;v&gt;</code>, <code>/World/CoffeeMaker_&lt;v&gt;</code>. Mid-process USD reference swap does NOT reach IsaacSim's hydra renderer — only pre-stage + <code>UsdGeom.Imageable.MakeInvisible()</code> visibility-toggle works (verified iter14–16 for mug, iter22 for cm).</li>
+    <li>Per-tick kinematic carry hits only the active variant's cached xform op; hidden variants stay at their last-written pose (no render cost).</li>
+    <li>On cm cycle: hide old prim, show new, rebind <code>cm_xform_op</code>, and <strong>re-bake the mug trajectory</strong> via <code>_rebake_traj_for_cm(new_cv, current_start)</code> so the place-end folds in the new cm's <code>dz</code> (cousin Z-lift). Mug perturbations (if any) carry through via <code>current_start</code>.</li>
+    <li><code>sim_app.close()</code> hangs on IsaacSim 5 carb plugin unload → replaced with <code>os._exit(0)</code> at L2407. All episode artifacts (h5/png/mp4/json) flush inside <code>main()</code> before the final <code>return</code>, so the hard exit is lossless.</li>
+  </ul>
+
+  <p class="key">Canonical 4×4 env-DR sweep (16 eps in one process):</p>
+  <pre>bash /home/arm-beast/Desktop/real2render2real/scripts/iter20_4x4_envrand.sh
+# Single call ↓
+bash scripts/xarm7_runner_v2.sh \
+    --capture-rollout \
+    --rollout-out ~/Downloads/outputs/r2r2r_xarm7_runner_v2_iter20_envrand \
+    --cm-pool  nips_cm,cm_1,cm2,cm4 \
+    --mug-pool nips_mug,mug_1,mug_2,mug_3 \
+    --n-episodes 16 \
+    --randomize \
+    --rand-disable physics,init_pose \
+    --rand-seed 42</pre>
+
+  <p class="hint">
+    <strong>DR axes active</strong> with <code>--rand-disable physics,init_pose</code>:
+    <code>skybox</code>, <code>skybox_rotation</code>, <code>lighting</code> (intensity 1500–3500 + tint), <code>sphere_lights</code> (5 per ep), <code>table_material</code> (palette: glossy_white / wood / etc.), <code>viewaug</code> (±7 cm pos+target jitter, ±3° ang bound).
+    Mug start-pose (<code>init_pose</code>) and friction/mass (<code>physics</code>) held fixed so success failures isolate to grasp feasibility, not noise.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Validated numbers (iter20, 2026-05-19)</h3>
+  <table>
+    <tr><th>metric</th><th>iter20 (1 process, 4×4 + DR)</th><th>shell-loop (4 processes)</th><th>speedup</th></tr>
+    <tr><td>wall time</td><td><strong>5:44</strong> for 16 eps</td><td>~50 min (4 × ~12 min/cm)</td><td><strong>~8.7×</strong></td></tr>
+    <tr><td>per-episode</td><td>22 sec/ep</td><td>~190 sec/ep</td><td>—</td></tr>
+    <tr><td>success rate</td><td>12/16 (75%)</td><td>n/a (no DR baseline)</td><td>—</td></tr>
+    <tr><td>iter18 baseline (no DR, grasp 0 only)</td><td colspan="2">4/4 success, track_err 0.0032–0.0034 rad</td><td>—</td></tr>
+  </table>
+
+  <p class="key">Failure mode in iter20 (not DR, not the cycle mechanism):</p>
+  <ul class="compact">
+    <li>Each ep increments <code>env_grasp = (env_grasp + 1) % n_grasps</code> per mug variant. n_grasps differs per mug (mug_1 = 18, mug_2 = 11, mug_3 = 10, nips_mug = 13).</li>
+    <li>Failing eps landed on grasps {g1, g3, g4, g10}, all on infeasible mug grasps — matches the cousin IK feasibility from Stage 2 (mug_2 = 64%, mug_3 = 70%).</li>
+    <li>Same combo (mug_1+nips_cm) succeeded in iter18 at grasp 0 (track_err 0.0033) and failed in iter20 at grasp 1 (track_err 8.32 rad).</li>
+    <li>Fix path: pre-filter the cousin IK tables to "perfect-feasible" grasps only (already supported in <code>view_perturbation_trajectories.py</code> via "only PERFECT grasps" filter), OR pin <code>--grasp 0</code> + disable per-ep cycling for guaranteed 16/16.</li>
+  </ul>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Output layout</h3>
+  <pre>~/Downloads/outputs/r2r2r_xarm7_runner_v2_iter20_envrand/
+├── ep_{00..15}/env_00/
+│   ├── episode.npz             # joint trajectory + T_mug_world + success metrics
+│   ├── meta.json               # mug/cm variant, scene_randomization log, success
+│   ├── robot_data/robot_data.h5  # R2R2R BatchDataLogger schema (joint_velocities + gripper_continuous_cmd)
+│   └── camera_0/
+│       ├── rgb/frame_NNNN.png
+│       ├── depth_NNNN.npy
+│       ├── seg_NNNN.npy
+│       └── rollout.mp4         # per-ep stitched preview
+├── run_meta.json
+└── iter20_all16_combined.mp4    # 16-ep stitched preview (auto-opened at finish)</pre>
+
+  <p class="key">Known cosmetic bugs in meta.json (don't affect rollout correctness):</p>
+  <ul class="compact">
+    <li><code>cm_variant_dz</code> reads stale module-level <code>CM_VARIANT_DZ</code> set at script load — reports +0.00 for all eps when <code>--cm-pool</code> cycles. The trajectory actually uses the right dz per cycle (verify in stdout: <code>[cm-cycle/ep] variant=cm_1 dz=-1.40cm</code>).</li>
+    <li>Success-grid <code>table</code> column shows <code>?</code> because the key is <code>scene_randomization.table_material.name</code>, not <code>.table</code>.</li>
+  </ul>
+
+  <p class="key">Adding a new pool axis (e.g. <code>--skybox-pool</code>, <code>--table-pool</code>):</p>
+  <ol class="compact">
+    <li>CLI flag (<code>xarm7_runner_v2.py</code> ~L213) mirroring <code>--cm-pool</code>.</li>
+    <li>Pool parsing (~L344): validate via <code>_list_*()</code>, set <code>args.X_variant = X_POOL[0]</code>.</li>
+    <li>Pre-stage in <code>design_scene_and_arm</code>: USD reference at <code>/World/&lt;Asset&gt;_&lt;v&gt;</code>, kinematic-pin, visibility-toggle non-active.</li>
+    <li>Cache xform ops in <code>main()</code> (~L1249): <code>X_xform_ops_by_variant: dict</code>.</li>
+    <li>Per-ep cycle in <code>_handle_reset_env</code> (~L1411): index math, visibility flip, rebind, re-bake derived state, update <code>args.X_variant</code> for meta.json.</li>
+  </ol>
+
+  <h3 style="margin-top: 22px; font-size: 15px;">Camera-pose baseline + aggressive viewaug (iter 21–22, 2026-05-19)</h3>
+  <p class="desc">
+    Two additive CLI flags on <code>xarm7_runner_v2.py</code> for matching real-eval camera pose + widening DR around it:
+  </p>
+  <ul class="compact">
+    <li><code>--cam-baseline-override="px,py,pz,tx,ty,tz"</code> — replaces the hard-coded baseline <code>(1.6,-1.4,0.9)→(0.4,0,0.3)</code>. ⚠ <strong>Use <code>=</code> not space</strong>: argparse rejects values starting with <code>-</code> (e.g. negative <code>px</code>) — see <code>reference_argparse_negative_prefix_eq.md</code>.</li>
+    <li><code>--viewaug-pos-cm N --viewaug-rot-deg D</code> — widen the per-ep camera jitter (default <code>±5 cm</code> / <code>±3°</code>). Validated <code>±15 cm / ±10°</code> for sim-to-real robustness (iter22 12/16 success).</li>
+  </ul>
+  <p class="key">Find the baseline pose via the viser cam-match tool:</p>
+  <pre>cd ~/Desktop/armlab_splat_tracking
+bash -i -c "conda activate semantic_splatting && python viser_isaac_cam_match.py --port 8081"
+# drag gizmo → click 'View from cam' to compare against RealSense ref → '💾 Save'
+# writes ~/Desktop/real2render2real/data/realsense_eval_cam_pose.json</pre>
+  <p class="key">Canonical iter22 invocation (uses the saved JSON):</p>
+  <pre>VIEWAUG_POS_CM=15 VIEWAUG_ROT_DEG=10 \
+    bash ~/Desktop/real2render2real/scripts/iter22_aggressive_aug.sh</pre>
+
+  <h3 style="margin-top: 22px; font-size: 15px;">Table-color DR fix — MDL vs UsdPreviewSurface + nested instancing (iter 23, 2026-05-19)</h3>
+  <p class="desc">
+    <strong>Symptom</strong>: <code>SceneRandomizer.randomize_table_material()</code> logs <code>bound_meshes=86, name=tan_leather</code> in every <code>meta.json</code> but the rendered table stays grey across all episodes.
+  </p>
+  <p class="key">Two compounding root causes:</p>
+  <ol class="compact">
+    <li><strong>RTX prefers MDL over UsdPreviewSurface</strong>. The <code>table2_instanceable.usd</code> asset (Thorlabs optical bench) ships with MDL materials in <code>/World/Looks/</code> — <code>Aluminum_Brushed</code> (rails), <code>Stainless_Steel_Glossy</code> (bolts), <code>Rubber_Smooth</code> (feet). When the randomizer adds a <code>UsdPreviewSurface</code> at <code>/World/Materials/TableUPS_*</code>, RTX reads <code>mdl:surface</code> preferentially and silently shadows the new color.</li>
+    <li><strong>101 nested instanceable prims block per-mesh authoring</strong>. <code>Usd.PrimRange(table_prim)</code> default doesn't descend into instance proxies. Walking with <code>Usd.TraverseInstanceProxies()</code> exposes them but they're <strong>read-only</strong> — <code>MaterialBindingAPI.Apply()</code> raises <code>"Cannot create prim spec at &lt;path&gt;; authoring to an instance proxy is not allowed"</code>.</li>
+  </ol>
+  <p class="key">Combined fix in <code>scripts/scene_randomizer.py:randomize_table_material()</code>:</p>
+  <pre># Recursively de-instance the entire subtree so every prim becomes authorable
+def _deep_deinstance(prim):
+    if prim.IsInstanceable():
+        prim.SetInstanceable(False)
+    for c in prim.GetChildren():
+        _deep_deinstance(c)
+_deep_deinstance(table_prim)
+
+# Strip the MDL binding before our new UsdPreviewSurface goes on
+binding = UsdShade.MaterialBindingAPI.Apply(table_prim)
+binding.UnbindAllBindings()
+binding.Bind(mat, bindingStrength=UsdShade.Tokens.strongerThanDescendants)
+for p in Usd.PrimRange(table_prim):
+    if p.IsInstanceProxy(): continue
+    if p.GetTypeName() in ("Mesh", "GeomSubset"):    # GeomSubset catches caster face-subsets
+        api = UsdShade.MaterialBindingAPI.Apply(p)
+        api.UnbindAllBindings()
+        api.Bind(mat, bindingStrength=UsdShade.Tokens.strongerThanDescendants)</pre>
+  <p class="hint">
+    <strong>Diagnostic</strong>: <code>scripts/inspect_table_usd.py</code> dumps every Mesh / GeomSubset under the table USD with its bound material + diffuseColor (uses <code>Usd.TraverseInstanceProxies()</code> for read-only inspection). Run via <code>bash -i -c "conda activate semantic_splatting && python scripts/inspect_table_usd.py"</code> — the <code>.venv-isaacsim5</code> env hides <code>pxr</code> outside an IsaacSim app; <code>semantic_splatting</code> has standalone <code>pxr</code>.
+    <br><br>
+    <strong>Generalizes</strong>: any future DR axis swapping materials on an MDL-shipped IsaacSim asset hits the same bug. Apply the same <code>UnbindAllBindings()</code> + <code>SetInstanceable(False)</code> pattern. Sphere lights / dome / skybox texture swaps are unaffected (no material binding).
+    <br><br>
+    <strong>Verified iter22 (2026-05-19)</strong>: post-fix, table material rotates per ep — <code>metal_plate_02_diff_1k.jpg</code> / <code>tan_leather</code> (0.7, 0.55, 0.4) / <code>rusty_corrugated_iron_diff_1k.jpg</code> etc. visibly different colors in the combined 16-ep mp4.
+  </p>
+
+  <h3 style="margin-top: 22px; font-size: 15px;">Table choice + table-lift + poster backdrop (iter 23–24, 2026-05-19/20)</h3>
+  <p class="desc">
+    Three additive scene-build knobs that together turn the IsaacSim scene from "Thorlabs breadboard frame floating in space" into "clean wooden workspace with a real-life-style foam-board backdrop", without touching trajectory / IK / grasps.
+  </p>
+
+  <p class="key"><code>--table-asset {thor,wooden}</code> (default <code>thor</code>):</p>
+  <ul class="compact">
+    <li><code>thor</code> — original Thorlabs optical-bench USD (legacy back-compat). Has the broken HTTP-payload "missing breadboard panel" problem.</li>
+    <li><code>wooden</code> — solid 1 m × 1 m plank USD at <code>data/assets/table_wooden/table_wooden.usd</code> with a baked UVTexture shader graph. Pairs with <code>SceneRandomizer.randomize_table_material</code>'s 52-texture pool so <code>--randomize</code> rotates per-ep textures automatically. <strong>Recommended for all new runs.</strong></li>
+  </ul>
+  <p class="hint">Also: <code>--simple-table</code> (procedural 2 m × 2 m quad + thin collision box, no USD), and <code>--surface-pool wood,concrete,white,dark,metallic,tan</code> (cycle palette colors per ep — outermost axis).</p>
+
+  <p class="key"><code>--table-lift-cm N</code> (default <code>0</code>):</p>
+  <p class="desc">
+    Raises the table z-offset by N cm. Closes the visual gap between the mug trajectory's lowest point and the table top WITHOUT modifying trajectory / IK targets / grasp poses. Trajectory + arm kinematics are unchanged — only the rendered table moves up.
+  </p>
+  <p class="hint">
+    <strong>The measured value is <code>1.33 cm</code></strong> — over all 31 samples × 92 frames of <code>perturb_sweep_trajectories.npz</code>, the mug-bottom min-z is <code>+0.0133 m</code> (sample 4, frame 24). Use <code>--table-lift-cm 1.33</code> to make the mug visibly kiss the table at its lowest pour-arc point.
+  </p>
+
+  <p class="key"><code>--poster-backdrop</code> + corner knobs:</p>
+  <p class="desc">
+    Adds a white matte vertical quad behind the workspace, mimicking the foam-board backdrop in the real-life RealSense reference scene. Pure visual prop — no collision, no physics. With <code>--poster-corner left|right</code> (default <code>left</code>), a second perpendicular wall meets the back wall at one end to form an L-shaped backdrop.
+  </p>
+  <ul class="compact">
+    <li><code>--poster-backdrop</code> — enable (default off)</li>
+    <li><code>--poster-x 0.70</code> / <code>--poster-y 0.03</code> — back-wall position</li>
+    <li><code>--poster-w-cm 120</code> / <code>--poster-h-cm 55</code> — back-wall dimensions (default 120×55 cm after iter24 widen)</li>
+    <li><code>--poster-corner {none,left,right}</code> — second wall side (default <code>left</code> = negative-Y end, far from matched cam → no occlusion)</li>
+    <li><code>--poster-corner-depth-cm 80</code> — corner-wall length along -X toward camera (default 80 cm)</li>
+  </ul>
+
+  <p class="key">Canonical iter24 invocation:</p>
+  <pre>POSE=$(python3 -c "import json; d=json.load(open('$HOME/Desktop/real2render2real/data/realsense_eval_cam_pose.json')); print(','.join(map(str, d['cam_pos']+d['cam_target'])))")
+bash scripts/xarm7_runner_v2.sh \
+  --capture-rollout --rollout-out "$HOME/Downloads/outputs/iter24_full" \
+  --table-asset wooden --table-lift-cm 1.33 \
+  --poster-backdrop \
+  --cm-pool nips_cm,cm_1,cm2,cm4 --mug-pool nips_mug,mug_1,mug_2,mug_3 \
+  --n-episodes 16 \
+  --randomize --rand-disable physics,init_pose --rand-seed 42 \
+  --cam-baseline-override="$POSE"</pre>
+
+  <p class="hint">
+    <strong>Verified (2026-05-20, single-ep smoke)</strong>: <code>success=True, track_err=0.0020</code> with wooden table lifted 1.33 cm + 120×55 cm back wall + 80×55 cm left corner wall. IK unaffected (trajectory data untouched). The mug visually sits on the table at its lowest pour-arc point, and both poster boards fill the cam's frame behind the workspace.
+  </p>
+
+  <h3 style="margin-top: 22px; font-size: 15px;">Cartesian approach + grasp-hold continuity (iter 32, 2026-05-21)</h3>
+  <p class="desc">
+    Eliminates the two perceptual "snaps" the production runner exhibited when mug/cm perturbations were non-zero. Single additive flag <code>--approach-cartesian</code> (default <code>False</code>) restructures two existing phases without touching IK / mug-carry / trajectory data.
+  </p>
+
+  <p class="key">Two snaps, one root cause:</p>
+  <ul class="compact">
+    <li><strong>Snap 1 — APPROACH endpoint.</strong> Pre-iter32 APPROACH did <code>q_target_arm = (1 - a_s) · q_pregrasp_arm + a_s · qs[0, :7]</code> — pure joint-space smoothstep. The pregrasp config is 33° away from the grasp config (<code>|q_pregrasp − q_grasp| ≈ 0.578 rad</code>), so the EE traces a Jacobian-induced curve, not the documented "straight forward push along TCP -Z". The EE arrives at the mug from a slightly oblique direction = snap-in at the last instant.</li>
+    <li><strong>Snap 2 — GRASP_HOLD → EXEC boundary.</strong> GRASP_HOLD held <code>q_target_arm = qs[0, :7]</code> (pre-baked, canonical-pose IK from the IK table). EXEC tick 0 commands <code>j_curr</code> (live IK, warm-started toward the WARPED <code>T_a_targets[0]</code>). Without warp these are equal — with warp they diverge by ~degrees per cm of perturbation. PhysX implicit PD then snaps to catch up at the same moment the mug starts kinematic-carry = reads as one combined "mug-jerks" snap.</li>
+  </ul>
+
+  <p class="key">Fix (gated on <code>--approach-cartesian</code>):</p>
+  <ul class="compact">
+    <li><strong>APPROACH:</strong> SE(3) lerp the EEF target via <code>_slerp_mat(T_a_eef_pregrasp, T_a_targets[0], a_s)</code>, then <code>_solve(T_a_curr, prev_q)</code> per tick. EE follows a true straight line along TCP -Z.</li>
+    <li><strong>GRASP_HOLD:</strong> hold at <code>j_curr[:7]</code> (live IK solution, warp-aware) instead of <code>qs[0, :7]</code>. EXEC tick 0 = same value, so the boundary is continuous.</li>
+  </ul>
+
+  <p class="key">Canonical iter32 invocation (4-ep smoke, mug+cm noise on):</p>
+  <pre>POSE="-0.485,0.539,0.391,0.352,0.035,0.178"
+bash scripts/xarm7_runner_v2.sh \
+  --n-episodes 4 \
+  --mug-variant mug_3 --cm-variant nips_cm \
+  --table-asset wooden --table-lift-cm 1.33 \
+  --pregrasp-s 3.0 --approach-s 8.0 --approach-cartesian \
+  --home-hold-s 1.5 --grasp-hold-s 5.0 \
+  --grip-close-frames 30 --hold-s 2.5 \
+  --mug-dx-range 5 --mug-dy-range 5 --mug-dyaw-range 30 \
+  --cm-dx-range 3 --cm-dy-range 3 --cm-dyaw-range 15 \
+  --cm-bias-toward-mug 0.5 \
+  --randomize --rand-disable physics --rand-seed 42 \
+  --cam-baseline-override="$POSE" \
+  --capture-rollout --rollout-out ~/Downloads/outputs/cartesian_approach_v2_smoke</pre>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Verified numbers (2026-05-21)</h3>
+  <p class="desc">Same noise stack, same mug, same seed — only difference is the new flag:</p>
+  <table>
+    <thead><tr><th>Run</th><th>Mode</th><th>Success</th><th>Max track_err (rad)</th></tr></thead>
+    <tbody>
+      <tr><td><code>yaw_sweep_mug_3_smooth</code></td><td>baseline (joint-lerp + qs[0,:7])</td><td>13 / 16</td><td>up to <strong>4.66</strong> (multi-rad spikes)</td></tr>
+      <tr><td><code>cartesian_approach_v2_smoke</code></td><td><code>--approach-cartesian</code></td><td><strong>4 / 4</strong></td><td><strong>0.060</strong> max across 4 eps</td></tr>
+    </tbody>
+  </table>
+  <p class="hint">
+    Track-err spikes were the snap signature — PhysX PD scrambling to catch up at the boundary. Eliminated by making both APPROACH and GRASP_HOLD target the same live-IK warm-start chain that EXEC continues, so the joint trajectory is continuous across <code>HOME → PRE-GRASP → APPROACH → GRASP_HOLD → EXEC</code>. The <code>--approach-s 8</code> (1.25 cm/s push) + <code>--grasp-hold-s 5</code> (slow smoothstep close) timing is preserved as the recommended smooth-motion baseline.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Touch points in <code>xarm7_runner_v2.py</code> (iter 32)</h3>
+  <table>
+    <thead><tr><th>Lines</th><th>What</th></tr></thead>
+    <tbody>
+      <tr><td>189–198</td><td>New <code>--approach-cartesian</code> CLI flag (default <code>False</code>)</td></tr>
+      <tr><td>1708</td><td>Initialize <code>T_a_eef_pregrasp = T_a_targets[0].copy()</code> in the degenerate <code>PREGRASP_BACKOFF_M == 0</code> branch</td></tr>
+      <tr><td>1769</td><td><code>T_a_eef_pregrasp</code> added to <code>_handle_reset_env</code>'s <code>nonlocal</code> list (was lost across resets — only <code>q_pregrasp_arm</code> survived)</td></tr>
+      <tr><td>2023–2030</td><td>Per-episode reset re-assigns <code>T_a_eef_pregrasp</code> (was named <code>T_a_eef_pregrasp_new</code> and discarded)</td></tr>
+      <tr><td>2614–2632</td><td>APPROACH branch on flag — Cartesian SE(3) lerp + live <code>_solve</code> when on, joint smoothstep otherwise</td></tr>
+      <tr><td>2637–2649</td><td>GRASP_HOLD <code>q_target_arm</code> branches to <code>j_curr[:7]</code> when flag on, <code>qs[0, :7]</code> otherwise</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr>
+
+<!-- ═════════════════════════ EXACT COMMANDS ═════════════════════════ -->
+<h2 id="exact">Exact commands (copy-paste, in order)</h2>
+<p class="sub">Every command verbatim. Sub-shells, kill-then-relaunch, log paths — all explicit. The viewers run in the background; kill them by PID before relaunching the same port.</p>
+
+<h3 style="margin-top: 18px; font-size: 15px;">0. Free GPU + verify</h3>
+<pre>nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader
+# If &gt;5 GB used by stale viewers: kill them first.
+nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv,noheader</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">1. Generate cousin grasps (per cousin: mug_1, mug_2, mug_3, sam_mug1)</h3>
+<pre># Kill any prior viewer on port 8095
+lsof -ti:8095 | xargs -r kill 2&gt;/dev/null
+
+# Launch hamer viewer with nips_mug as primary
+~/Desktop/real2render2real/.venv/bin/python -u \
+  ~/Desktop/armlab_splat_tracking/interactive_hamer_xarm.py \
+  --mug nips_mug --port 8095 \
+  &gt; /tmp/hamer_nips_mug.log 2&gt;&amp;1 &amp;
+
+# Open http://localhost:8095 in browser:
+#   • Mug shown dropdown → pick cousin (mug_1 / mug_2 / mug_3 / sam_mug1)
+#   • Saved grasp dropdown → pick a nips_mug anchor seed
+#   • Perturb saved grasp folder → set # samples (30), pos jitter (1.5cm),
+#     rot jitter (15°), auto-save valid ✓
+#   • ▶ Run perturbation sweep → valid grasps auto-append to
+#     &lt;cousin&gt;/grasps/grasps_interactive_xarm.txt in cousin's own viser frame
+#   • 👁 All-grasps overlay → toggle to verify validity (🟢/🟡/🔵/🔴)</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">2. Pre-compute IK tables (mug_1 = combined nips+native pool)</h3>
+<pre># 31 mug-perturbations × 18 grasps × 92 frames ≈ 558 IK chains, ~14 min
+~/Desktop/real2render2real/.venv/bin/python -u /tmp/compute_mug_1_combined_ik.py \
+  &gt; /tmp/mug_1_combined_ik.log 2&gt;&amp;1 &amp;
+
+# Watch progress
+tail -f /tmp/mug_1_combined_ik.log
+
+# For mug_2 / mug_3 / sam_mug1 (cousin-only pool, ~5–7 min each):
+~/Desktop/real2render2real/.venv/bin/python -u /tmp/compute_all_cousin_ik.py \
+  &gt; /tmp/cousin_ik_sweep.log 2&gt;&amp;1 &amp;
+
+# Outputs:
+#   ~/Desktop/armlab_splat_tracking/&lt;mug&gt;/grasps/&lt;mug&gt;_ik_table.npz
+# Stores: joints (S,G,Nt,n_act), ee_world (S,G,Nt,3), results_grid (S,G),
+#         dq_grid (S,G), floor_grid (S,G), T_grasp_body (G,4,4), grasp_source</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">3. Launch the trajectory viewer</h3>
+<pre># Kill any prior viewer on 8099
+lsof -ti:8099 | xargs -r kill 2&gt;/dev/null
+
+# Launch viewer (auto-loads all per-cousin IK tables)
+~/Desktop/real2render2real/.venv/bin/python -u \
+  ~/Desktop/armlab_splat_tracking/view_perturbation_trajectories.py \
+  --port 8099 \
+  &gt; /tmp/view_perturb_8099.log 2&gt;&amp;1 &amp;
+
+# Open http://localhost:8099 in browser:
+#   • Mug variant dropdown → pick mug; grasp count + IK auto-load
+#   • Sample dropdown → pick mug perturbation (1 baseline + 30 random)
+#   • Grasp dropdown → pick grasp index
+#   • CM variant + CM scale + CM anchor → swap/scale coffee maker
+#   • CM Δx / CM Δy / CM Δyaw → live preview (cm splat moves immediately)
+#   • 🔁 Replan IK with CM perturbation + Z-lift → re-runs IK for current
+#     (sample, grasp) under live CM perturb + Z-lift; ~7 s per click
+#   • Frame slider + ▶ Play → animate</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">4. Optional viewers (auxiliary)</h3>
+<pre># Full lighting viewer with skybox + cm + xArm + demo trajectory IK (port 8093)
+~/Desktop/real2render2real/.venv/bin/python -u \
+  ~/Desktop/armlab_splat_tracking/viser_interactive_lighting_variants.py \
+  --port 8093 &gt; /tmp/lighting_viewer.log 2&gt;&amp;1 &amp;
+
+# View saved s_tier joint pose alone (port 8094)
+~/Desktop/real2render2real/.venv/bin/python -u \
+  ~/Desktop/armlab_splat_tracking/view_xarm_pose_only.py \
+  --pose-name s_tier --port 8094 &gt; /tmp/s_tier.log 2&gt;&amp;1 &amp;
+
+# Inspect cousin's grasps (single mug, full color-coded eval)
+~/Desktop/real2render2real/.venv/bin/python -u \
+  ~/Desktop/armlab_splat_tracking/interactive_hamer_xarm.py \
+  --mug mug_1 --port 8097 &gt; /tmp/hamer_mug_1.log 2&gt;&amp;1 &amp;</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">5. Cleanup (free GPU when done)</h3>
+<pre># Kill all known viewers in the 80xx range
+for p in 8093 8094 8095 8096 8097 8098 8099; do
+  lsof -ti:$p 2&gt;/dev/null | xargs -r kill 2&gt;/dev/null
+done
+sleep 2
+
+# Verify GPU is free
+nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader
+nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv,noheader</pre>
+
+<h3 style="margin-top: 18px; font-size: 15px;">Reference results (mug_1 combined-pool IK, 2026-05-15)</h3>
+<table>
+<tr><th>Source</th><th>Grasps</th><th>Total combos</th><th>Perfect (92/92)</th><th>Mean reach</th><th>Mean max-pos err</th></tr>
+<tr><td>nips_mug</td><td>13</td><td>403</td><td><strong>381 (95%)</strong></td><td>92.0/92</td><td>0.0 mm</td></tr>
+<tr><td>mug_1</td><td>5</td><td>155</td><td><strong>126 (81%)</strong></td><td>91.0/92</td><td>0.0 mm</td></tr>
+<tr><td><strong>combined</strong></td><td><strong>18</strong></td><td><strong>558</strong></td><td><strong>507 (91%)</strong></td><td>—</td><td>—</td></tr>
+</table>
+<p class="hint">Body-frame cluster check before IK: nips↔mug_1 distance min 0.4 cm / mean 3.7 cm / max 7.5 cm — both grasp sets are in the same handle region after the cousin-frame fix.</p>
+
+<hr>
+
+<!-- ═════════════════════════ REFERENCE ═════════════════════════ -->
+<h2 id="refs">Reference paths</h2>
+<table>
+  <tr><th>What</th><th>Path</th></tr>
+  <tr><td>Per-mug grasp file</td><td><code>&lt;mug&gt;/grasps/grasps_interactive_xarm.txt</code></td></tr>
+  <tr><td>Per-mug IK table</td><td><code>&lt;mug&gt;/grasps/&lt;mug&gt;_ik_table.npz</code></td></tr>
+  <tr><td>nips_mug master IK + samples</td><td><code>nips_mug/perturb_sweep_trajectories.npz</code></td></tr>
+  <tr><td>Cousin alignment files (cousin → nips_mug)</td><td><code>&lt;cousin&gt;_to_nips_mug_aligned.pt</code></td></tr>
+  <tr><td>CM placement-region masks (20× weighted ICP)</td><td><code>&lt;cm&gt;_nearby_nips_mug.pt</code></td></tr>
+  <tr><td>Saved xArm joint poses (s_tier seed lives here)</td><td><code>nips_mug/saved_xarm_poses.json</code></td></tr>
+  <tr><td>HAMER pkl (depth-aligned)</td><td><code>~/Downloads/outputs/mug_cm/hamer_mug_cm/hamer_results_aligned_base_xy.pkl</code></td></tr>
+  <tr><td>Skybox</td><td><code>~/Desktop/real2render2real/data/assets/skyboxes/lab1.jpg</code></td></tr>
+</table>
+
+<h2>Recommended port assignments</h2>
+<table>
+  <tr><th>Port</th><th>Script</th><th>Use</th></tr>
+  <tr><td><code>8095</code></td><td>interactive_hamer_xarm.py --mug nips_mug</td><td>Generate cousin grasps via cousin-swap dropdown</td></tr>
+  <tr><td><code>8097</code></td><td>interactive_hamer_xarm.py --mug &lt;cousin&gt;</td><td>Inspect single cousin's grasps directly</td></tr>
+  <tr><td><code>8099</code></td><td>view_perturbation_trajectories.py</td><td>Final trajectory viewer</td></tr>
+</table>
+
+<hr>
+
+<!-- ═════════════════════════ STAGE 6 ═════════════════════════ -->
+<div class="stage" id="s6">
+  <h2><span class="num">6</span> R2R2R IsaacLabViser data-gen rollout (smooth live IK) <span class="pill headless">headless</span></h2>
+  <p class="desc">
+    Replays the pre-baked trajectory through IsaacSim 5 + IsaacLab using R2R2R's
+    canonical data pipeline. <code>Xarm7NipsMug(IsaacLabViser)</code> subclass
+    drives <code>num_envs</code> envs in parallel, solves IK live via the
+    batched <code>JaxMPBatchedController</code>, and captures
+    <code>rgb + depth + semantic_segmentation</code> from <strong>both</strong>
+    R2R2R camera poses (from <code>camera_poses_calib_031425.h5</code>) in a
+    single batched tick via <code>MultiTiledCameraCfg(cams_per_env=2)</code>.
+  </p>
+
+  <p class="desc">
+    <strong>Smoothness recipe:</strong> IK solves at <code>--ik-fps 10</code>
+    (matches the standalone live-IK script), renders at
+    <code>--render-fps 30</code> with linear blend
+    <code>j_interp = (1−α)·j_curr + α·j_next</code> between successive IK
+    solutions. Mirrors <code>view_xarm7_replay_ik_jaxmp_live.py --smooth linear</code>
+    motion exactly (warm-start chain at IK cadence, interp at render cadence).
+  </p>
+
+  <p class="hint">
+    Currently <strong>manipulability cost is disabled</strong>
+    (<code>use_manipulability=False</code>) due to a shape bug in
+    <code>BatchedRobotFactors.manipulability_cost</code> for our setup.
+    IK still converges cleanly via position + orientation + rest costs.
+    Manipulability bias (preferring less-singular elbow configs) can be
+    re-enabled by fixing the upstream shape mismatch.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Run</h3>
+<pre>cd ~/Desktop/real2render2real
+bash scripts/launch_xarm7_nips_mug.sh \
+    --num-envs 2 --n-episodes 1 \
+    --ik-fps 10 --render-fps 30
+# auto-writes to ~/Downloads/outputs/r2r2r_nips_mug/
+# /tmp is sandboxed away from VLC (snap) — output dir must be outside /tmp</pre>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Files (R2R2R canonical paths)</h3>
+  <table>
+    <tr><th>Path</th><th>Role</th></tr>
+    <tr><td><code>real2render2real/isaaclab_viser/configs/scene_configs/xarm7_nips_mug_cfg.py</code></td><td>Xarm7BaseCfg subclass — MultiTiledCameraCfg with rgb+depth+seg + kinematic RigidObject mug + cm pointing at nips_ mesh USDs</td></tr>
+    <tr><td><code>real2render2real/isaaclab_viser/xarm7_simulators/xarm7_nips_mug.py</code></td><td>IsaacLabViser subclass — loads trajectory, derives <code>T_grasp_body</code> per env from frame-0 FK, runs IK-cadence solve + render-cadence linear blend, captures both cameras per tick, ffmpeg-stitches MP4s</td></tr>
+    <tr><td><code>scripts/launch_xarm7_nips_mug.py</code> / <code>.sh</code></td><td>Entry point — pre-loads <code>jaxlie</code>/<code>jaxmp</code> BEFORE IsaacSim (warp module-load order); installs <code>np.dtypes.StringDType</code> + <code>jax.tree_*</code> shims for numpy 1.26 / jax 0.5+ compat</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Outputs (per env × per camera)</h3>
+<pre>~/Downloads/outputs/r2r2r_nips_mug/
+├── env_00/
+│   ├── camera_0/
+│   │   ├── rgb/frame_NNNN.png        # render-cadence (30 fps)
+│   │   ├── depth_NNNN.npy            # sparse — every 10th render tick
+│   │   ├── seg_NNNN.npy
+│   │   └── rollout.mp4               # ← VLC-friendly (out of /tmp)
+│   └── camera_1/...                  # same, second R2R2R pose
+├── env_01/...                        # next grasp_idx, round-robin
+└── run_meta.json</pre>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Reference numbers (2026-05-16)</h3>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>IK solve (CPU JAX, batched, 2 envs)</td><td><strong>1.7–5.6 ms</strong> per tick</td></tr>
+    <tr><td>JIT warm-up (frame 0 + frame 1)</td><td>~3 s</td></tr>
+    <tr><td>End-to-end (2 envs × 92 IK frames × 3 render ticks each)</td><td>273 ticks in 29.9 s → <strong>18 env-fps</strong></td></tr>
+    <tr><td>T_grasp_body rigid-check (frame 0 vs frame 91)</td><td>0.02 mm position error ✓</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Upstream patches landed</h3>
+  <ul>
+    <li><code>real2render2real/isaaclab_viser/base.py</code> — viser/viser.extras imports made optional via try/except (IsaacSim's <code>websockets==12.0</code> pin lacks <code>websockets.asyncio</code>). <code>init_viser=True</code> raises a clear error.</li>
+    <li><code>real2render2real/isaaclab_viser/controllers/jaxmp_diff_ik_controller.py</code> — same optional-viser pattern + string-annotated <code>TransformHandle</code> dataclass so the module imports headlessly.</li>
+    <li><code>dependencies/rsrd/dependencies/jaxmp/src/jaxmp/batched_robot_factors.py</code> — missing <code>RobotFactors</code> import added (upstream bug; <code>manipulability_cost</code> referenced it without importing).</li>
+    <li><code>data/assets/object_scans/nips_{mug,coffee_maker}/<obj>.usd</code> — <code>PhysicsRigidBodyAPI</code> + <code>PhysicsMassAPI</code> applied in place (the stock R2R2R USDs had them; the TSDF-derived nips_ ones did not, so <code>RigidObjectCfg</code> failed to resolve).</li>
+  </ul>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Knobs that matter</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Effect</th></tr>
+    <tr><td><code>--num-envs N</code></td><td>2</td><td>Parallel envs; round-robins through the 13 grasp_idx in npz</td></tr>
+    <tr><td><code>--ik-fps F</code></td><td>10</td><td>IK solve cadence; matches standalone <code>--smooth linear</code>'s npz fps</td></tr>
+    <tr><td><code>--render-fps F</code></td><td>30</td><td>Render / MP4 cadence; <code>render_per_ik = render_fps / ik_fps</code> linear-blend sub-ticks per IK solve</td></tr>
+    <tr><td><code>--n-episodes N</code></td><td>1</td><td>Episodes per env before stopping (each episode = 92 frames, advances grasp_idx by num_envs)</td></tr>
+    <tr><td><code>--no-randomize</code></td><td>off</td><td>Skip per-reset <code>randomize_lighting</code> + <code>randomize_viewaug</code> hooks inherited from IsaacLabViser</td></tr>
+    <tr><td><code>--init-viser</code></td><td>off</td><td>Launch the heavy viser server (requires upgraded <code>websockets</code> &gt;= 13)</td></tr>
+  </table>
+</div>
+
+<hr>
+
+<!-- ═════════════════════════ STAGE 7 ═════════════════════════ -->
+<div class="stage" id="s7">
+  <h2><span class="num">7</span> Interactive live-IK viewer — home → approach → carry → release <span class="pill viewer">viewer</span></h2>
+  <p class="desc">
+    Single-env interactive IsaacSim 5 viewer. Same live IK as Stage 6, but solo
+    (1 env, 1 camera, GUI on) for visual inspection and demos. Each loop pass
+    plays the full <strong>HOME → APPROACH → EXECUTE</strong> cycle: arm starts
+    at home, smoothly approaches the grasp pose, closes on the mug, carries it
+    along the npz trajectory, opens to release at the place pose, and repeats.
+    The mug rides kinematically with the EE (<em>no physics</em>) since the
+    trajectory was solved with a rigid grasp.
+  </p>
+
+  <p class="hint">
+    <strong>Use this</strong> for visual sanity-checks, debugging mesh
+    placement, and quick demos. <strong>Don't use it for data-gen</strong> —
+    Stage 6 (Xarm7NipsMug batched rollout) is the canonical pipeline.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Run</h3>
+<pre>cd ~/Desktop/real2render2real
+bash scripts/view_xarm7_replay_ik_jaxmp_live.sh --sample 0 --grasp 0 --loop
+
+# Slower approach, longer home hold, snugger gripper:
+bash scripts/view_xarm7_replay_ik_jaxmp_live.sh --sample 0 --grasp 0 --loop \
+    --home-hold-s 2.0 --approach-s 6.0 --grip-close-val 0.75</pre>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Phase schedule (per loop pass)</h3>
+  <table>
+    <tr><th>Phase</th><th>Duration</th><th>Arm</th><th>Gripper</th><th>Mug</th></tr>
+    <tr><td><strong>HOME</strong></td><td><code>--home-hold-s</code> (1.0 s)</td><td>q_home = <code>[0, -0.26, 0, 0.52, 0, 0.61, 0]</code></td><td>open</td><td>at <code>traj_mug[0]</code></td></tr>
+    <tr><td><strong>APPROACH</strong></td><td><code>--approach-s</code> (4.0 s, smoothstep)</td><td>interp q_home → qs[0]</td><td>open</td><td>at <code>traj_mug[0]</code></td></tr>
+    <tr><td><strong>EXECUTE — grasp</strong></td><td>first <code>--grip-close-frames</code> npz frames (3 ≈ 0.3 s)</td><td>live IK on <code>T_a_targets[t]</code></td><td>ramp 0 → <code>--grip-close-val</code> (0.65 rad)</td><td>follows <code>T_arm_inv @ traj_mug[t]</code></td></tr>
+    <tr><td><strong>EXECUTE — carry</strong></td><td>middle frames</td><td>live IK</td><td>hold closed</td><td>follows trajectory</td></tr>
+    <tr><td><strong>EXECUTE — release</strong></td><td>last <code>--grip-open-frames</code> npz frames (4 ≈ 0.4 s)</td><td>live IK</td><td>ramp <code>grip-close-val</code> → 0</td><td>at place pose</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Knobs</h3>
+  <table>
+    <tr><th>Flag</th><th>Default</th><th>Effect</th></tr>
+    <tr><td><code>--sample N</code></td><td>0</td><td>Perturbation sample index (0..30 in current npz)</td></tr>
+    <tr><td><code>--grasp N</code></td><td>0</td><td>Grasp index (per sample)</td></tr>
+    <tr><td><code>--loop</code></td><td>off</td><td>Restart the full HOME → APPROACH → EXECUTE cycle indefinitely</td></tr>
+    <tr><td><code>--home-hold-s F</code></td><td>1.0</td><td>Seconds at home before approach starts</td></tr>
+    <tr><td><code>--approach-s F</code></td><td>4.0</td><td>Seconds for smoothstep interp home → grasp</td></tr>
+    <tr><td><code>--grip-close-val F</code></td><td>0.65</td><td>drive_joint target when closed (rad; URDF caps at 0.85)</td></tr>
+    <tr><td><code>--grip-close-frames N</code></td><td>3</td><td>npz frames over which to ramp the close at start of EXECUTE</td></tr>
+    <tr><td><code>--grip-open-frames N</code></td><td>4</td><td>npz frames over which to ramp the open at end of EXECUTE</td></tr>
+    <tr><td><code>--fps F</code></td><td>10</td><td>Wall-clock npz playback fps (matches Stage 6 IK cadence)</td></tr>
+    <tr><td><code>--smooth {linear,smoothstep,none}</code></td><td>linear</td><td>Inter-frame blend between consecutive IK solutions</td></tr>
+    <tr><td><code>--no-mug</code> / <code>--no-cm</code></td><td>both on</td><td>Hide the mug / coffee_maker mesh</td></tr>
+    <tr><td><code>--table-material {default,wood}</code></td><td>wood</td><td>Override table material with a warm-oak <code>UsdPreviewSurface</code></td></tr>
+    <tr><td><code>--capture-rollout</code></td><td>off</td><td>Save RGB+depth+state+MP4 to <code>--rollout-out</code> (forces <code>--loop=False</code>; exits after one pass)</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Reference numbers (2026-05-16, sample 0 / grasp 0)</h3>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>Live IK vs pre-baked joints (null-space spread)</td><td>mean 0.47°, <strong>max 2.71°</strong> joint norm @ frame 50</td></tr>
+    <tr><td>Live IK vs pre-baked EE pose (correctness)</td><td>mean 0.03 mm pos, mean 0.01° ang — <strong>identical EE</strong></td></tr>
+    <tr><td>PhysX actual vs commanded joint (actuator tracking)</td><td>mean 0.03°, max 0.23° joint norm @ frame 37</td></tr>
+    <tr><td>PhysX actual EE vs viser pre-baked EE</td><td>mean <strong>0.85 mm</strong>, max <strong>7.08 mm</strong> @ frame 37</td></tr>
+    <tr><td>EE arc length (actual / target / viser)</td><td>645 mm / 648 mm / 648 mm — <strong>99.5%</strong> of viser</td></tr>
+    <tr><td>Render rate (1 env, GUI on, RTX 5090)</td><td>~50–55 Hz</td></tr>
+    <tr><td>IK solve time (CPU JAX, single env)</td><td>3.8–5.0 ms</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Gotchas (learned 2026-05-16)</h3>
+  <ul>
+    <li><strong>Centered-Umeyama mesh USDs are required</strong>. The mesh USDs at <code>data/assets/object_scans/nips_{mug,coffee_maker}/<obj>_state_rigid.usd</code> must be baked with the <em>centered</em> state_rigid means (matches the viser viewer's <code>load_splat()</code> which subtracts the centroid). Using raw means produces a mesh whose centroid lives ~30 cm below origin → <strong>mug + coffee_maker render below the table</strong> when placed at <code>T_arm_inv @ T_mug</code>. Re-bake via <code>scripts/wrap_meshes_in_state_rigid_frame.py</code>.</li>
+    <li><strong>JaxMP imports must precede <code>from isaacsim import SimulationApp</code></strong>. <code>mujoco_warp</code>'s <code>wp.array2d[int]</code> annotation breaks after IsaacSim loads its own <code>warp</code>. Already wired at the top of the script — don't reorder.</li>
+    <li><strong>Numpy / jax shims at top of script</strong>: <code>np.dtypes.StringDType</code> stub + <code>jax.tree_*</code> top-level restore. Needed because IsaacSim pins numpy 1.26 + we ship newer jax.</li>
+    <li><strong>Mug + coffee_maker must be kinematic + gravity-disabled</strong>. <code>_pin_as_kinematic()</code> sets <code>kinematicEnabled=True</code> on the <code>PhysicsRigidBodyAPI</code> so writing to <code>xformOp:transform</code> every tick stays in sync with PhysX (no gravity pulling them off-pose between writes).</li>
+    <li><strong>Gripper trajectory is NOT in the npz</strong>. <code>joints[s, g, t, 7] == 0</code> for every frame (IK only solved the 7 arm DoFs). The close/hold/open schedule is hand-rolled in the loop — knobs above.</li>
+    <li><strong>Table top is at world Z = 0</strong> (legs extend to z = −0.795). The xArm base sits at world (0,0,0) on the table surface. Mug at <code>T_arm_inv @ T_mug[0]</code> lands at world Z ≈ 0.16 m (~16 cm above table).</li>
+    <li><strong>Table is scaled 1.8× in XY</strong> by default so both the mug (y≈0) and coffee_maker (y≈0.46) fit comfortably on the surface. Z scale stays 1 so leg height is unchanged.</li>
+    <li><strong>Wall-clock loop, not event-driven</strong>: <code>t_pass = now − t_seg</code> drives phase. If the renderer slows (GPU contention), the arm advances at wall-clock rate and PhysX can lag → looks jerky. Check the <code>[fps]</code> line.</li>
+    <li><strong><code>--smooth linear</code> matches the standalone live-IK script's motion exactly</strong> (Stage 6 also uses linear blend between IK solutions). <code>smoothstep</code> is for stricter C¹ continuity at IK boundaries.</li>
+    <li><strong>🚨 GPU-contention zombies are CATASTROPHIC, not just glitchy (learned 2026-05-19)</strong>. Any background process holding the RTX 5090 (idle viser viewers, stale gsplat renderers, leftover ns-train, etc.) drives the per-frame <code>dt</code> from ~110 ms → ~155 ms (40 % overshoot). Because phase-tick counts are <code>int(self.fps · phase_s)</code> (fixed in <em>seconds</em>) but the inner <code>sim.step()</code> isn't sleep-rate-limited, slower steps still complete the same number of ticks per phase — only each tick now demands a <strong>larger</strong> joint-target delta. The xArm7 PD physically can't track the larger slew, the warm-started IK chain keeps marching forward from <code>prev_q</code> (not <code>q_state</code>), and the joint-tracking error compounds to <strong>7.7–8.9 rad final_track_err</strong> — every episode fails with <code>final_track_err &gt; 0.2</code>. Even episodes with <em>zero</em> jitter (Δ = 0) fail. <strong>Symptom signature</strong>: <code>per-frame median dt &gt; 130 ms</code> in <code>t_wall</code> diff, <code>max_per_tick |Δq_cmd| ≈ |Δq_state|</code> at iter11 (passing) but state lags 5× behind cmd at iter12_55_30 (failing). <strong>Preflight</strong> before EVERY launch: <code>nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader</code> + <code>lsof -nP -iTCP -sTCP:LISTEN | grep -E ':80[89][0-9]'</code> — if anything other than the launch you're about to do is holding GPU/viser ports, kill it first. iter11→iter13 reference: zombie viser viewers (4 days old, PIDs 3937403 / 3958751 on port 8082) caused 0/4 success at jitter ±5 cm / ±30°; after kill, iter13_5_5_30 hit <strong>4/4 success, max_err 0.38–0.46 rad, median dt 109 ms</strong> at the same jitter.</li>
+  </ul>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Files</h3>
+  <table>
+    <tr><th>Path</th><th>Role</th></tr>
+    <tr><td><code>real2render2real/scripts/view_xarm7_replay_ik_jaxmp_live.py</code></td><td>Main script — phase state machine + live IK + mug carry + gripper schedule</td></tr>
+    <tr><td><code>real2render2real/scripts/view_xarm7_replay_ik_jaxmp_live.sh</code></td><td>Launcher (sets <code>LD_LIBRARY_PATH</code> + <code>PYTHONPATH</code>)</td></tr>
+    <tr><td><code>real2render2real/scripts/wrap_meshes_in_state_rigid_frame.py</code></td><td>Bakes the centered-Umeyama mesh USDs — re-run if the state_rigid splat <code>.pt</code> changes</td></tr>
+    <tr><td><code>real2render2real/data/assets/object_scans/nips_mug/mug_state_rigid.usd</code></td><td>Mug TSDF mesh in centered state_rigid frame</td></tr>
+    <tr><td><code>real2render2real/data/assets/object_scans/nips_coffee_maker/coffee_maker_state_rigid.usd</code></td><td>Coffee-maker TSDF mesh in centered state_rigid frame</td></tr>
+    <tr><td><code>armlab_splat_tracking/nips_mug/perturb_sweep_trajectories.npz</code></td><td>Source of <code>traj_mug</code> + <code>joints</code> + <code>T_arm</code> + <code>T_cm_static</code></td></tr>
+  </table>
+</div>
+
+<hr>
+
+<!-- ═════════════════════════ STAGE 8 ═════════════════════════ -->
+<div class="stage" id="s8">
+  <h2><span class="num">8</span> Cousin mug → IsaacSim USD (mug_1 / mug_2 / mug_3 worked) <span class="pill headless">headless</span> <span class="pill viewer">viewer</span></h2>
+  <p class="desc">
+    End-to-end recipe for adding a NEW cousin variant (mug_1, mug_2, mug_3,
+    sam_mug1, …) to the IsaacSim live-IK viewer (Stage 7) while sharing
+    nips_mug's trajectory + grasps + IK table. The cousin's <strong>splat
+    and grasps stay on the original cousin Sim3</strong> (so the existing
+    pre-computed IK table remains valid); only the cousin <strong>mesh</strong>
+    needs to be brought into the centered nips_state_rigid frame via a
+    bidir-ICP-refined Sim3.  Worked end-to-end on 2026-05-17 for mug_1.
+  </p>
+
+  <p class="hint">
+    <strong>Critical:</strong> the full 1.3M-face cousin <code>mesh_aligned.obj</code>
+    OOMs in IsaacSim 5 (NVTT block-compression fails on
+    <code>cudaMalloc</code>). Build a TSDF lowpoly mesh from the splat at
+    ~15 mm voxel (~44 k F) instead.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Pipeline (per cousin)</h3>
+  <pre>cd ~/Desktop/armlab_splat_tracking
+source ~/Desktop/real2render2real/.venv/bin/activate
+
+# 1. TSDF lowpoly mesh from the cousin splat — 504 views, 15mm voxels → ~44k F
+python build_tsdf_mesh.py \
+    --splat-path mug_1/stage2/splat_viewable.pt \
+    --output-dir  mug_1/grasps \
+    --voxel-size 0.015 --sdf-trunc 0.060 \
+    --out-name tsdf_lowpoly_voxel15mm \
+    --no-viser
+
+# 2. Bidir ICP between the TSDF mesh and the cousin splat
+#    (composes ICP delta with the raw cousin Sim3 and writes mug_1_to_nips_mug_aligned_icp.pt)
+python align_mug1_tsdf_icp.py
+
+# 3. Inspect the alignment in viser (port 8088)
+python view_mug1_overlay.py --port 8088 \
+    --mesh-path mug_1/grasps/tsdf_lowpoly_voxel15mm.obj
+# Tick 'show mesh' — the 22k-vert mesh should sit tightly on the 781k-Gaussian splat.
+
+# 4. Verify in the perturb viewer (port 8099) — uses the SAME _icp.pt:
+python view_perturbation_trajectories.py --port 8099
+# Mug variant → mug_1, tick 'Show cleaned mesh (overlay on splat)'
+
+# 5. Bake the IsaacSim USD from the TSDF lowpoly mesh + ICP-refined Sim3
+cd ~/Desktop/real2render2real
+python scripts/wrap_cousin_mesh_to_state_rigid.py \
+    --cousins mug_1 \
+    --mesh-override ~/Desktop/armlab_splat_tracking/mug_1/grasps/tsdf_lowpoly_voxel15mm.obj
+# → data/assets/object_scans/mug_1/mug_state_rigid.usd  (22k V / 44k F / 626 KB)
+
+# 6. Run the live-IK viewer with the cousin variant
+bash scripts/view_xarm7_replay_ik_jaxmp_live.sh \
+    --sample 0 --grasp 0 --loop --mug-variant mug_1</pre>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Reference numbers per cousin (TSDF @ 15 mm voxel, 2026-05-17)</h3>
+  <table>
+    <tr><th>cousin</th><th>TSDF mesh (V / F)</th><th>USD size</th><th>ICP scale (raw → refined)</th><th>chamfer</th><th>grasps</th><th>IK feasibility (n_ok=92)</th></tr>
+    <tr><td>mug_1</td><td>22 k / 44 k</td><td>626 KB</td><td>0.16217 → <strong>0.16211</strong></td><td>1.64 mm</td><td>5 own + 13 nips (combined)</td><td>507/558 (<strong>91%</strong>)</td></tr>
+    <tr><td>mug_2</td><td>19.8 k / 39 k</td><td>556 KB</td><td>0.16830 → <strong>0.16685</strong></td><td>1.97 mm</td><td>11 own only</td><td>217/341 (<strong>64%</strong>) — 7 grasps 31/31</td></tr>
+    <tr><td>mug_3</td><td>17.7 k / 35 k</td><td>481 KB</td><td>0.17118 → <strong>0.17000</strong></td><td>2.16 mm</td><td>10 own only</td><td>217/310 (<strong>70%</strong>)</td></tr>
+    <tr><td>nips_mug (reference)</td><td>14.8 k / 29 k</td><td>430 KB</td><td>n/a</td><td>n/a</td><td>13 native</td><td>381/403 (<strong>95%</strong>)</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">CM-pose perturbation (<code>--cm-dx / --cm-dy / --cm-dyaw</code>) — replan IK live in IsaacSim</h3>
+  <p class="desc">
+    Same deterministic SE(3) endpoint-blend warp the perturb viewer uses for
+    its <strong>🔁 Replan IK with CM perturbation + Z-lift</strong> button is
+    available headless in the live-IK script via three CLI flags.  The mug
+    trajectory's <em>place</em> end follows the perturbed CM pose; the start
+    pose stays fixed (so the arm still picks up at the standard spot).  Live
+    IK auto-replans per frame from the warped trajectory.
+  </p>
+<pre># Place CM 8 cm right, 12.5 cm back, +13° yaw — live IK replans
+bash scripts/view_xarm7_replay_ik_jaxmp_live.sh \
+    --sample 0 --grasp 0 --loop --mug-variant mug_3 \
+    --cm-dx 8 --cm-dy -12.5 --cm-dyaw 13</pre>
+  <p class="hint">
+    The CM USD also relocates to the perturbed pose (not just the mug end
+    target), so the visual scene matches what the arm is actually solving for.
+    Combine <code>--sample N</code> (initial-mug-pose perturbation) +
+    <code>--cm-dx/dy/dyaw</code> (place-pose perturbation) to get
+    <strong>31 × any-cm-grid × G grasps × cousins</strong> diverse episodes
+    from a single demo.
+  </p>
+  <p class="hint">
+    <strong>Expected warning:</strong> <code>[grasp] ⚠ grasp drifts across
+    trajectory</code>.  The rigid-grasp check compares frame 0 vs frame -1 —
+    with CM perturbation, the place-end relative grasp shifts.  Live IK
+    handles it cleanly; only the diagnostic is informational.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Sweep over initial mug poses (<code>--sample N</code>)</h3>
+  <p class="desc">
+    The shared <code>perturb_sweep_trajectories.npz</code> contains <strong>31 mug-pose perturbations</strong> (random dx ∈ ±15 cm, dy ∈ ±15 cm, dyaw ∈ ±45° around the nominal pickup pose). <code>--sample N</code> picks one. The arm, grasp, IK, and gripper schedule all stay the same; only the per-frame mug pose changes — letting you generate many "initial-pose" demos from a single grasp.
+  </p>
+<pre># Sweep first 6 perturbation samples for mug_3, grasp 0:
+for s in 0 1 2 3 4 5; do
+  bash scripts/view_xarm7_replay_ik_jaxmp_live.sh \
+      --sample $s --grasp 0 --loop --mug-variant mug_3
+done
+
+# To know which (sample, grasp) cells are perfect-feasible for a cousin,
+# scrub the perturb viewer with "show only PERFECT grasps for sample" on,
+# OR read `results_grid` from <cousin>/grasps/<cousin>_ik_table.npz directly.</pre>
+
+  <p class="hint">
+    The <code>view_perturbation_trajectories.py</code> "Sample" dropdown label
+    embeds <code>perfect={n}/G</code> — sample 0 typically has the most
+    feasible grasps; high-perturbation samples may have fewer. Always pair a
+    <code>--sample</code> with a grasp that has <code>results_grid[s, g]==92</code>.
+  </p>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Knobs</h3>
+  <table>
+    <tr><th>Flag</th><th>Where</th><th>Effect</th></tr>
+    <tr><td><code>--voxel-size F --sdf-trunc F</code></td><td><code>build_tsdf_mesh.py</code></td><td>Mesh resolution. ~5× sdf_trunc/voxel ratio is safe; bigger voxel = fewer faces.</td></tr>
+    <tr><td><code>--out-name STR</code></td><td><code>build_tsdf_mesh.py</code></td><td>Output basename — writes <code>&lt;name&gt;.{ply,obj}</code> next to the splat.</td></tr>
+    <tr><td><code>--mesh-path PATH --mesh-already-canonical</code></td><td><code>view_mug1_overlay.py</code></td><td>Override the default full mesh; "canonical" = skip cousin Sim3 application (mesh already in centered nips frame).</td></tr>
+    <tr><td><code>--mesh-override PATH</code></td><td><code>wrap_cousin_mesh_to_state_rigid.py</code></td><td>Skip decimation, use this mesh directly (e.g. the TSDF lowpoly).</td></tr>
+    <tr><td><code>--mug-variant {nips_mug,mug_1,mug_2,mug_3}</code></td><td><code>view_xarm7_replay_ik_jaxmp_live.py</code></td><td>Select cousin USD. Cousins also load joints + <code>T_grasp_body</code> from their <code>&lt;cousin&gt;_ik_table.npz</code>; trajectory + arm pose still come from the shared <code>perturb_sweep_trajectories.npz</code>.</td></tr>
+    <tr><td><code>--sample N</code></td><td><code>view_xarm7_replay_ik_jaxmp_live.py</code></td><td>Initial-mug-pose perturbation index ∈ [0, 30]. Each picks a different (dx, dy, dyaw) mug-pose; arm + IK + carry all stay the same.</td></tr>
+    <tr><td><code>--grasp N</code></td><td><code>view_xarm7_replay_ik_jaxmp_live.py</code></td><td>Grasp index (per cousin: mug_1=18, mug_2=11, mug_3=10, nips_mug=13). Check the cousin's <code>results_grid</code> for which are perfect-feasible.</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Gotchas (learned 2026-05-17)</h3>
+  <ul>
+    <li><strong>Full 1.3M-face cousin mesh OOMs IsaacSim 5</strong>. Error chain: <code>NVTT cudaMalloc → out of memory → cudaErrorIllegalAddress → Failed to create simulation view backend</code>. Keep cousin meshes under ~150k faces.</li>
+    <li><strong>Pre-baked <code>mesh_aligned_decim20k.obj</code> files in armlab dropped vertex colors</strong> (uniform grey 102/102/102). Don't use them — build fresh via <code>build_tsdf_mesh.py</code> or do color-preserving KNN decimation.</li>
+    <li><strong>The cousin Sim3 in <code>&lt;cousin&gt;_to_nips_mug_aligned.pt</code> was fit on splat↔splat means</strong>. Applying it to a mesh (whose geometric centroid differs from Gaussian centroid by 1–3 cm) leaves a residual offset. Run bidir ICP between (mesh-canon, splat-canon) and save as <code>&lt;cousin&gt;_to_nips_mug_aligned_icp.pt</code>.</li>
+    <li><strong>Do NOT change <code>MUG_ALIGN</code> for the splat / grasp body-frame conversion</strong>. The cousin's pre-computed IK table (<code>&lt;cousin&gt;_ik_table.npz</code>) was solved with grasps in the raw-Sim3 body frame. The ICP-refined Sim3 is for the MESH OVERLAY ONLY — the splat + grasps + IK stay on the raw cousin Sim3.</li>
+    <li><strong>OBJ + MTL can't carry PBR emissive</strong>. <code>map_Ke</code> and <code>baseColorFactor</code> get dropped on export; setting <code>baseColorFactor=(0,0,0,1)</code> + <code>emissiveTexture</code> turns the mesh fully BLACK in viser. Use <code>SimpleMaterial</code> for OBJ-textured meshes, or export as <code>.glb</code> if PBR is needed.</li>
+    <li><strong>viser default lighting darkens textured meshes</strong>. Bump scene brightness with <code>configure_default_lights(enabled=False) + add_light_ambient(intensity=3.0) + add_light_directional</code> from 6 cardinal directions (±X, ±Y, ±Z).</li>
+    <li><strong>perturb viewer cousin mesh path is overridable</strong> via <code>_PREFERRED_MESH_REL</code> dict at the top of the cousin-mesh-pool loop in <code>view_perturbation_trajectories.py</code>. Set <code>"mug_1": "grasps/tsdf_lowpoly_voxel15mm.obj"</code> to swap meshes per-cousin.</li>
+  </ul>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Files</h3>
+  <table>
+    <tr><th>Path</th><th>Role</th></tr>
+    <tr><td><code>armlab_splat_tracking/build_tsdf_mesh.py</code></td><td>Render N views of a splat + Open3D TSDF fusion. Now takes <code>--voxel-size</code>, <code>--sdf-trunc</code>, <code>--out-name</code>.</td></tr>
+    <tr><td><code>armlab_splat_tracking/align_mug1_tsdf_icp.py</code></td><td>Headless bidir ICP between cousin mesh + cousin splat in canonical frame; writes <code>&lt;cousin&gt;_to_nips_mug_aligned_icp.pt</code>.</td></tr>
+    <tr><td><code>armlab_splat_tracking/view_mug1_overlay.py</code></td><td>Focused viser viewer with splat + mesh overlay + bidir-ICP button + save. Now has bright ambient + 6 directional lights so meshes don't render dark.</td></tr>
+    <tr><td><code>real2render2real/scripts/wrap_cousin_mesh_to_state_rigid.py</code></td><td>Bakes a cousin USD into the centered nips state_rigid frame. <code>--mesh-override</code> skips decimation.</td></tr>
+    <tr><td><code>real2render2real/scripts/view_xarm7_replay_ik_jaxmp_live.py</code></td><td>Live-IK viewer; <code>--mug-variant</code> selects nips_mug or mug_1.</td></tr>
+    <tr><td><code>armlab_splat_tracking/mug_1_to_nips_mug_aligned_icp.pt</code></td><td>Refined Sim3 (cousin stage2 → centered nips state_rigid). Mesh-only — splat + grasps still use the raw <code>_to_nips_mug_aligned.pt</code>.</td></tr>
+    <tr><td><code>armlab_splat_tracking/mug_1/grasps/tsdf_lowpoly_voxel15mm.{obj,ply}</code></td><td>15 mm-voxel TSDF lowpoly mesh in cousin stage2 frame.</td></tr>
+    <tr><td><code>real2render2real/data/assets/object_scans/mug_1/mug_state_rigid.usd</code></td><td>IsaacSim USD baked from the TSDF mesh + ICP-refined Sim3.</td></tr>
+  </table>
+
+  <h3 style="margin-top: 18px; font-size: 15px;">Adding a new cousin (e.g. sam_mug1) — proven 7-step recipe</h3>
+  <ol>
+    <li><strong>Clear stale grasps</strong> (if any): <code>cp &lt;cousin&gt;/grasps/grasps_interactive_xarm.txt &lt;cousin&gt;/grasps/grasps_interactive_xarm.txt.bak_$(date +%H%M%S) && echo "[]" &gt; &lt;cousin&gt;/grasps/grasps_interactive_xarm.txt</code></li>
+    <li><strong>Generate grasps</strong>: <code>python interactive_hamer_xarm.py --mug nips_mug --port 8095</code> → in GUI: <em>Cousin mug swap</em> → cousin, ▶ <em>Run perturbation sweep</em> (auto-saves valid ✓ grasps).</li>
+    <li><strong>TSDF lowpoly mesh</strong>: <code>python build_tsdf_mesh.py --splat-path &lt;cousin&gt;/stage2/splat_viewable.pt --output-dir &lt;cousin&gt;/grasps --voxel-size 0.015 --sdf-trunc 0.060 --out-name tsdf_lowpoly_voxel15mm --no-viser</code></li>
+    <li><strong>Bidir ICP</strong>: <code>python align_mug1_tsdf_icp.py --cousin &lt;cousin&gt;</code> (script is cousin-agnostic via <code>--cousin</code> flag; writes <code>&lt;cousin&gt;_to_nips_mug_aligned_icp.pt</code>).</li>
+    <li><strong>IK table</strong>: <code>cp /tmp/compute_mug_2_proven_own_only.py /tmp/compute_&lt;cousin&gt;_proven_own_only.py && sed -i 's/^MUG = "mug_2"$/MUG = "&lt;cousin&gt;"/' /tmp/compute_&lt;cousin&gt;_proven_own_only.py && python /tmp/compute_&lt;cousin&gt;_proven_own_only.py</code></li>
+    <li><strong>Register mesh path</strong> in <code>view_perturbation_trajectories.py</code>: add <code>"&lt;cousin&gt;": "grasps/tsdf_lowpoly_voxel15mm.obj"</code> to <code>_PREFERRED_MESH_REL</code>.</li>
+    <li><strong>Bake USD + register variant</strong>: <code>python scripts/wrap_cousin_mesh_to_state_rigid.py --cousins &lt;cousin&gt; --mesh-override &lt;path&gt;</code> + add <code>"&lt;cousin&gt;"</code> to the <code>--mug-variant</code> choices in <code>view_xarm7_replay_ik_jaxmp_live.py</code>.</li>
+  </ol>
+  <p class="hint">
+    Steps 3-7 take ~10 min total (5 of which is the IK table). Step 2 (grasp generation) is the only hands-on GUI step.
+  </p>
+</div>
+
+<!-- ═════════════════════════ STAGE 8b (MV-SAM3D textured CM USD) ═════════════════════════ -->
+<div class="stage" id="s8b">
+  <h2><span class="num">8b</span> MV-SAM3D textured CM → IsaacSim USD (replaces TSDF vertex-color cm) <span class="pill headless">headless</span><span class="datepill">2026-06-04</span></h2>
+  <p class="desc">
+    Swap the <code>corl_cm</code> coffee-machine USD from the TSDF vertex-color mesh to an <strong>MV-SAM3D textured mesh</strong> (UV + diffuse atlas) so the rendered Keurig actually looks like a Keurig. Two alignment steps keep the new mesh in the canonical <code>corl_cm.ply</code> splat frame, then a UV-preserving USD bake replaces <code>cm_state_rigid.usd</code>. Data-gen runner is unchanged — only the asset swap.
+  </p>
+
+  <h3>Inputs &amp; outputs</h3>
+  <table>
+    <tr><th>Path</th><th>Role</th></tr>
+    <tr><td><code>~/Desktop/sam3_outputs/corl_cm/mesh_aligned.obj</code> + <code>material.mtl</code> + <code>material_0.png</code></td><td>MV-SAM3D mesh (UV + diffuse atlas)</td></tr>
+    <tr><td><code>~/Desktop/sam3_outputs/corl_cm/mesh_aligned.bak_pre_mvsam3d.obj</code></td><td>Backup of the prior TSDF mesh — the alignment <em>target</em>, also the revert point</td></tr>
+    <tr><td><code>~/Desktop/sam3_outputs/corl_cm/corl_cm.pt</code></td><td>Splat means → centroid for the USD bake</td></tr>
+    <tr><td><code>data/assets/object_scans/corl_cm/cm_state_rigid.usd</code></td><td><strong>Output</strong> — textured USD consumed by the data-gen runner</td></tr>
+  </table>
+
+  <h3>Scripts (run in order)</h3>
+  <pre>PY=~/Desktop/real2render2real/.venv/bin/python
+cd ~/Desktop/armlab_splat_tracking
+
+# 1. Initial splat-frame alignment (Rx(±90°) init + bidir ICP + learnable scale).
+#    Documented in SAM3D_OBJECT_PIPELINE.html — validated 5/5 on cousins, scale → ~0.98.
+$PY align_sam3d_mesh_to_splat.py        # writes mesh_aligned.obj in splat frame
+
+# 2. Refine to the TSDF surface (mesh-to-mesh bidir ICP + scale on 30k surface samples).
+#    Target = mesh_aligned.bak_pre_mvsam3d.obj (the original TSDF, in splat frame).
+#    Overwrites mesh_aligned.obj IN PLACE (UV + .mtl + material_0.png untouched).
+$PY align_mvsam3d_to_tsdf_and_z_shift.py
+
+# 3. Bake textured USD via IsaacLab MeshConverter (preserves UV + diffuse-atlas material).
+#    Must run inside the IsaacSim 5 venv (.venv-isaacsim5).
+CU13=.venv-isaacsim5/lib/python3.11/site-packages/nvidia/cu13/lib
+LD_LIBRARY_PATH="$CU13" .venv-isaacsim5/bin/python build_corl_cm_usd_textured.py
+#   → data/assets/object_scans/corl_cm/cm_state_rigid.usd  (centered + SCALE_TO_M=0.632850)
+
+# 4. Consume in data-gen — same smooth-decel knobs, only the USD changed.
+bash run_corl_1k_mvsam3d_cm.sh
+#   → ~/Downloads/outputs/corl_1k_mvsam3d_cm_2026_06_04/</pre>
+
+  <h3 style="margin-top:18px">Why two alignment passes</h3>
+  <table>
+    <tr><th>Pass</th><th>Anchor</th><th>What it fixes</th></tr>
+    <tr><td>1. <code>align_sam3d_mesh_to_splat.py</code></td><td>Splat-point cloud (bidir ICP, Rx(±90°) multi-start, scale)</td><td>Brings the raw MV-SAM3D output into the splat's canonical frame + sets axis convention. Validated recipe (chamfer 60 → 18.9 mm on test mug).</td></tr>
+    <tr><td>2. <code>align_mvsam3d_to_tsdf_and_z_shift.py</code></td><td>TSDF mesh surface (30k samples, bidir ICP + scale)</td><td>Refines against the <em>physical</em> reference geometry. The TSDF mesh was rendered from the splat itself, so it's the truest CM surface — Pass 1's splat-points target can drift on the "blob" body. Pass 2 collapses the residual.</td></tr>
+  </table>
+
+  <h3 style="margin-top:18px">Gotchas (learned 2026-06-04)</h3>
+  <ul class="compact">
+    <li><strong>Don't PLY-roundtrip a UV-textured mesh.</strong> <code>build_corl_usds.py</code> (the vertex-color path used for cousin mugs) bakes color into vertices via PLY — trimesh strips the UV + material binding. Use <code>build_corl_cm_usd_textured.py</code> which calls IsaacLab <code>MeshConverter</code> on the OBJ directly, with <code>material.mtl</code> + <code>material_0.png</code> staged alongside in a temp dir. Same tool R2R2R used for stock <code>coffee_maker.usd</code> — material binding survives into USD.</li>
+    <li><strong>Centroid + <code>SCALE_TO_M = 0.632850</code> must match <code>build_corl_usds.py</code></strong> — same constant the vertex-color path uses. Otherwise the textured CM lands at a different position/scale than the old one and every CM-relative pose (cm-pose perturbation, grasp tables, ground-seat math from <code>CM_GROUNDSEAT_DATAGEN.html</code>) drifts.</li>
+    <li><strong>In-place overwrite of <code>mesh_aligned.obj</code></strong> — pass 2 writes back to the same path. The TSDF target is preserved as <code>.bak_pre_mvsam3d.obj</code>/<code>.ply</code>. If you ever want the old vertex-color CM back: copy the bak over <code>mesh_aligned.obj</code>, re-run <code>build_corl_usds.py</code> (vertex-color path).</li>
+    <li><strong>No Z-shift in pass 2 (despite the script name).</strong> Bidir ICP with scale already minimizes chamfer to the TSDF surface — that's the right alignment. The Z-shift hook is left as a future option if a specific anchor (e.g. mug-place pose) needs to be pinned, but the current 1k run uses ICP-only.</li>
+    <li><strong>Pose / extents sanity check</strong>: <code>build_corl_cm_usd_textured.py</code> prints metric extents in meters after centering+scale. Expected ≈ 0.20 × 0.20 × 0.32 m for a Keurig (matches the prior TSDF CM within a few mm); large deviation = pass-1 alignment regressed.</li>
+  </ul>
+
+  <h3 style="margin-top:18px">Adding another textured CM cousin (e.g. y_cm6) — recipe</h3>
+  <ol class="compact">
+    <li>Run MV-SAM3D on the cousin photo → write OBJ + MTL + atlas to <code>~/Desktop/sam3_outputs/&lt;cousin&gt;/</code>.</li>
+    <li>Move the existing TSDF mesh aside: <code>cp mesh_aligned.obj mesh_aligned.bak_pre_mvsam3d.obj</code>.</li>
+    <li>Replace <code>mesh_aligned.obj</code> with the MV-SAM3D mesh + run pass 1 (splat-frame ICP).</li>
+    <li>Run pass 2 (<code>align_mvsam3d_to_tsdf_and_z_shift.py</code> — re-point <code>SAM3</code> path to the cousin dir).</li>
+    <li>Run <code>build_corl_cm_usd_textured.py</code> with the cousin's centroid + the same SCALE_TO_M. Output to <code>data/assets/object_scans/&lt;cousin&gt;/cm_state_rigid.usd</code>.</li>
+    <li>Add the cousin to <code>CM_VARIANT_POOL</code> in the run script — no code change needed in the runner.</li>
+  </ol>
+
+  <p class="hint">Reference: 1k run dir <code>~/Downloads/outputs/corl_1k_mvsam3d_cm_2026_06_04/</code>. Memory: <code>reference_trellis_mesh_splat_alignment.md</code> (Pass-1 Rx(±90°) recipe), <code>reference_splat_mesh_alignment.md</code> (general Sim3 + bidir-ICP).</p>
+</div>
+
+<p class="hint" style="margin-top: 32px;">
+  Last updated 2026-06-04 — Stage 8b: MV-SAM3D textured CM swaps in for the TSDF vertex-color cm. Two-pass alignment (splat-frame ICP → TSDF-surface ICP, both bidir + learnable scale), UV-preserving USD bake via IsaacLab <code>MeshConverter</code> (NOT PLY-roundtrip), runner consumes via <code>run_corl_1k_mvsam3d_cm.sh</code> with unchanged smooth-decel knobs.
+  ·  2026-05-18 — added <code>--cm-dx / --cm-dy / --cm-dyaw</code> to <code>view_xarm7_replay_ik_jaxmp_live.py</code>: same deterministic endpoint-blend warp as the perturb viewer's Replan IK; live IK auto-replans in IsaacSim per frame.  CM USD also relocates to the perturbed pose.  Combined with <code>--sample N</code> + <code>--mug-variant</code>, this is the headless cousin-data-collector engine — 31 mug-pose perturbations × any-cm-grid × G grasps × cousins per demo.
+  ·  Stage 5 now lists <strong>recommended Z-scales per cm variant</strong> (<code>cm_1=1.10</code>, <code>cm2=1.70</code>, <code>cm4=1.10</code>, baked into <code>CM_RECOMMENDED_Z_SCALE</code>); auto-applied on dropdown change. New scripts: <code>sweep_cm_scale_clearance.py</code> (single-variant sweep with fraction-within-radius metric) + <code>find_cm_scale_sweet_spots.py</code> (multi-variant sweep + recommendation table).
+</p>
+
+</div>
+</body>
+</html>

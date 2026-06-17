@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dual-Seed IK + Self-Collision — corl xArm7</title>
+<style>
+  :root {
+    --bg: #fcfcfd; --fg: #1f2430; --muted: #5a6273; --line: #e3e6ee;
+    --code-bg: #f3f4f8; --accent: #2563eb; --accent-soft: #dbeafe;
+    --green: #16a34a; --green-soft: #dcfce7; --amber: #d97706; --amber-soft: #fef3c7;
+    --rose: #db2777; --rose-soft: #fce7f3; --indigo: #4f46e5; --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 34px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0; border: 1px solid var(--line); }
+  pre code { background: none; padding: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .pill.gui { background: var(--accent-soft); color: var(--accent); }
+  .pill.headless { background: var(--amber-soft); color: var(--amber); }
+  .pill.done { background: var(--green-soft); color: var(--green); }
+  .stage { border: 1px solid var(--line); border-radius: 12px; padding: 20px 24px; margin: 18px 0; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  figure { margin: 14px 0; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--code-bg); font-weight: 600; }
+  .key { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+  .ga { background: #5ac878; } .or { background: #f0a03c; } .bl { background: #5a96f0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 30px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Dual-Seed IK + Self-Collision <span class="pill done">corl xArm7</span></h1>
+<p class="sub">How a fixed EE grasp pose maps to <em>different</em> joint solutions depending on the IK seed — and how to detect the self-folding branches before they reach sim. Built on <code>corl_mug</code> grasp poses from the VLA data-gen pipeline. &nbsp;·&nbsp; 2026-05-25</p>
+
+<div class="note">
+<b>The point.</b> A 7-DOF arm reaching a 6-DOF target has a 1-DOF redundancy <em>and</em> multiple discrete IK branches. <code>jaxmp.solve_ik</code> is a local solver, so <b>which</b> solution it returns is decided by the seed it starts from. The runner's <code>--dual-seed-ik</code> exploits this: solve from both <b>home</b> and the <b>pre-baked s-tier</b> config, then keep the better branch. This doc visualizes that effect across the 60-grasp pool and adds a capsule self-collision check to flag the bad branches.
+</div>
+
+<h2>One grasp, three seeds, three postures</h2>
+<p>Every arm below is driven to the <b>same</b> gripper pose (★) with the <b>same</b> solver — only the IK seed differs. At this grasp the home seed lands a collapsed branch that folds the wrist back toward the base (self-collision <b>−29&nbsp;mm</b>), while the s-tier-style seeds reach a clean extended posture.</p>
+<figure>
+  <img src="dualseed_assets/fig_skeletons.png" alt="three FK skeletons">
+  <figcaption>FK link skeletons (link_base → link_eef) at the most-divergent grasp (#37). <span class="dot ga"></span>home seed &nbsp; <span class="dot or"></span>new seed &nbsp; <span class="dot bl"></span>old s-tier (pre-baked <code>qs</code>). ★ = shared EE target.</figcaption>
+</figure>
+
+<h2>Seed → branch divergence across the pool</h2>
+<p>Branch gap = joint-space distance to the old s-tier solution after the runner's ±360° unwrap. Above ≈30° the seed has landed a genuinely different IK branch (not just elbow swivel).</p>
+<figure>
+  <img src="dualseed_assets/fig_branchgap.png" alt="branch gap bar chart">
+  <figcaption>Home seed diverges &gt;30° on <b>25/60</b> grasps; the new seed diverges on <b>50/60</b>. Same solver, same targets — divergence is purely the seed.</figcaption>
+</figure>
+
+<h2>Self-collision per seed</h2>
+<p>Minimum signed capsule clearance (jaxmp <code>RobotColl</code>); lower = the arm is folding into itself. The threshold separates real folds from capsule grazing.</p>
+<figure>
+  <img src="dualseed_assets/fig_selfcoll.png" alt="self collision line chart">
+  <figcaption>Self-coll &lt; −15&nbsp;mm: home <b>3/60</b>, new seed <b>13/60</b>, old s-tier <b>8/60</b>. The "good" seed minimizes self-folds — that is the seed-selection signal.</figcaption>
+</figure>
+
+<div class="key">
+<b>Takeaway for seed choice.</b> No single seed wins everywhere. The home seed self-collides least (3/60) but takes wild branches on 25/60; the new seed reaches nice extended postures but self-collides most (13/60). This is exactly why a <b>per-grasp dual-seed solve + collision gate</b> beats any fixed seed — pick, per grasp, the branch that reaches the target <em>and</em> stays self-collision-free.
+</div>
+
+<hr>
+
+<h2>How it works (3 mechanisms)</h2>
+
+<div class="stage">
+<h3>1 · Grasp pose → arm-base EE target</h3>
+<p>Reconstructed from the data-gen pipeline (validated &lt;0.06&nbsp;mm vs the pre-baked IK table):</p>
+<pre><code>T_a_eef = inv(T_arm) @ traj_mug[sample, t] @ T_grasp_body[g] @ trans(0,0,-TCP_OFFSET)
+# TCP_OFFSET = 0.172 m  ·  T_arm, traj_mug, T_grasp_body from corl_mug/{perturb_sweep_trajectories,grasps/corl_mug_ik_table}.npz</code></pre>
+</div>
+
+<div class="stage">
+<h3>2 · Seed-dependent IK (the runner's <code>_solve_anchor</code>)</h3>
+<p>Same <code>jaxmp.solve_ik</code> call, same rest pose (home), same weights — only <code>initial_pose</code> changes. The local solver descends to whichever branch is nearest the seed.</p>
+<pre><code>JointVar = RobotFactors.get_var_class(kin, q_home8)        # rest = HOME
+ik_w     = [100,100,100, 5,5,5]
+q = solve_ik(kin, target_SE3, [eef_idx], seed8, JointVar, ik_w,
+             rest_weight=0.01, limit_weight=100.0, max_iterations=80)
+# seed8 = home  → branch A      seed8 = qs[g] (s-tier) → branch C
+# runner then unwraps the s-tier branch toward home and keeps it if it reaches the pose</code></pre>
+<p class="sub" style="margin:8px 0 0">Contrast with <b>null-space biasing</b> (<code>q̇ = J⁺·twist + (I−J⁺J)·k(q_bias−q)</code>): that stays <em>within one branch</em> and only slides the redundant elbow. Seeding selects the <em>branch</em>. See <code>view_nullspace_bias_corl.py</code> for the within-branch version.</p>
+</div>
+
+<div class="stage">
+<h3>3 · Self-collision (capsule + home-ACM)</h3>
+<p>jaxmp <code>RobotColl</code> wraps each link in a capsule. The raw model false-positives on the gripper parallel-linkage and adjacent links, so we build an Allowed-Collision-Matrix from the <b>home pose</b> (a known collision-free config) and ignore any pair grazing there.</p>
+<pre><code>rc0  = RobotColl.from_urdf(urdf)
+Dh   = pairwise_capsule_dist(rc0.at_joints(kin, home8))      # distances at home
+ignore = [(a,b) for a,b in checked_pairs if Dh[a,b] <= 0.020]  # 38 capsule pairs
+robot_coll = RobotColl.from_urdf(urdf, self_coll_ignore=ignore)
+clearance_mm = robot_coll.self_coll_dist(kin, cfg8) * 1000   # <0 = penetration</code></pre>
+<div class="key" style="margin-top:10px">
+<b>Honest limit.</b> The capsule model is noisy at the cm scale — genuinely-clear poses graze 0…−10&nbsp;mm; a real wrist-into-base fold reads ~−45&nbsp;mm. It reliably catches <b>gross</b> self-folds (the bad-branch failure mode) but is not mm-accurate. For exact clearance, swap in FCL on the URDF coarse collision meshes (<code>python-fcl</code> / <code>trimesh.collision</code>, already used by <code>interactive_collision_xarm.py</code>).
+</div>
+</div>
+
+<hr>
+
+<h2>Run the viewers <span class="pill gui">viser :8080</span></h2>
+<pre><code># 3-seed comparison over the 60 grasps (home / new / old-s-tier) + self-coll column
+python view_dual_seed_grasps_corl.py \
+    --seed-b-rad "0.4281,0.2136,-0.5048,0.1921,3.0058,1.5553,-0.2338" --port 8080
+
+# within-branch null-space biasing (home vs s-tier elbow swivel)
+python view_nullspace_bias_corl.py --port 8080
+
+# gizmo EE editor: JParse vs jaxmp side-by-side, save poses
+python view_gizmo_ik_compare_corl.py --seed-rad "0.4281,...,-0.2338" --port 8080
+
+# regenerate the figures in this doc (headless, CPU)
+JAX_PLATFORMS=cpu python generate_dualseed_figs.py</code></pre>
+<table>
+<tr><th>Script</th><th>What</th></tr>
+<tr><td><code>view_dual_seed_grasps_corl.py</code></td><td>3 arms, same grasp, seeds = home / new / old-s-tier; <code>grasp</code>+<code>frame</code> sliders; per-arm pos/rot, branch gap→C, self-coll(mm) + ⚠️</td></tr>
+<tr><td><code>view_nullspace_bias_corl.py</code></td><td>within-branch null-space bias toward home vs s-tier (2-phase: converge then null-descend)</td></tr>
+<tr><td><code>view_gizmo_ik_compare_corl.py</code></td><td>drag-gizmo EE target, JParse vs jaxmp solvers, 💾 save both configs</td></tr>
+<tr><td><code>generate_dualseed_figs.py</code> <span class="pill headless">headless</span></td><td>the 3 figures above + <code>sweep_stats.npz</code></td></tr>
+</table>
+
+<h2>Baking into sim (next)</h2>
+<p>The runner already does the dual-seed branch select in <code>xarm7_runner_v2.py:_solve_anchor</code> (with <code>--dual-seed-ik</code>). To finish wiring the collision gate into data-gen:</p>
+<ul>
+<li>Build <code>robot_coll</code> once (home-ACM) alongside <code>kin</code> at runner init.</li>
+<li>In <code>_solve_anchor</code>, after computing the home- and s-tier-seeded branches, prefer the one that (a) reaches the pose and (b) has <code>self_coll_dist &gt; threshold</code> — fall back to lower pos-err only if both collide.</li>
+<li>Optionally reject the whole episode if no branch clears, same gate style as the existing <code>--reject-arm-table-collision</code> path.</li>
+<li>For a mm-accurate gate at bake time (offline, not live), use FCL on the coarse meshes.</li>
+</ul>
+
+</div>
+</body>
+</html>

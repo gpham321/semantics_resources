@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera Alignment — IsaacSim ↔ real RGB, automated</title>
+<style>
+  :root {
+    --bg: #fcfcfd; --fg: #1f2430; --muted: #5a6273; --line: #e3e6ee;
+    --code-bg: #f3f4f8; --accent: #2563eb; --accent-soft: #dbeafe;
+    --green: #16a34a; --green-soft: #dcfce7; --amber: #d97706; --amber-soft: #fef3c7;
+    --rose: #db2777; --rose-soft: #fce7f3; --indigo: #4f46e5; --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; padding: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 32px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0; border: 1px solid var(--line); }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; vertical-align: middle; margin-left: 6px; letter-spacing: 0.02em; }
+  .pill.input { background: var(--indigo-soft); color: var(--indigo); }
+  .pill.gui { background: var(--accent-soft); color: var(--accent); }
+  .pill.headless { background: var(--amber-soft); color: var(--amber); }
+  .pill.done { background: var(--green-soft); color: var(--green); }
+  .stage { border: 1px solid var(--line); border-radius: 12px; padding: 20px 24px; margin: 18px 0; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .stage h2 { margin: 0 0 6px; display: flex; align-items: baseline; }
+  .stage h2 .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; margin-right: 10px; flex-shrink: 0; }
+  .stage .desc { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  .stage .file { color: var(--muted); font-size: 12px; margin: 4px 0 10px; }
+  .key { font-weight: 600; color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); background: var(--code-bg); }
+  td code { font-size: 0.92em; }
+  .nb { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px; }
+  .nb .lbl { font-weight: 700; color: var(--accent); margin-right: 4px; }
+  .warn { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px; }
+  .warn .lbl { font-weight: 700; color: var(--amber); margin-right: 4px; }
+  .arrow { text-align: center; font-size: 22px; color: var(--muted); margin: -2px 0; user-select: none; }
+  .toc { font-size: 13px; margin: 0 0 24px; color: var(--muted); }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  ul.compact { margin: 6px 0; padding-left: 22px; } ul.compact li { margin: 3px 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  .quickstart { background: linear-gradient(135deg, var(--indigo-soft) 0%, white 50%); border: 1px solid var(--indigo); border-radius: 12px; padding: 18px 22px; margin: 0 0 24px; }
+  .quickstart h2 { margin-top: 0; color: var(--indigo); }
+  .quickstart pre { background: white; }
+  figure { margin: 14px 0; padding: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; background: #000; }
+  figcaption { padding: 8px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); background: white; }
+  .figure-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+  .figure-row figure { margin: 0; }
+  .metric { display: inline-block; background: var(--green-soft); color: var(--green); font-weight: 700; padding: 1px 7px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Automated Camera Alignment <span class="pill done">IoU 0.894</span></h1>
+<p class="sub">Solve the IsaacSim render camera so it matches a real RealSense photo — fully automated (SAM&nbsp;silhouette&nbsp;IoU&nbsp;+&nbsp;centroid/area&nbsp;+&nbsp;DINOv3&nbsp;+&nbsp;RGB), staying local to a seed pose. So synthetic xArm7 data is rendered from the <em>same</em> viewpoint + intrinsics as the real robot. · 2026-05-25</p>
+
+<div class="toc">
+  <strong>Stages:</strong>
+  <a href="#s1">1 · Real robot mask</a> ·
+  <a href="#s2">2 · Persistent watch-render</a> ·
+  <a href="#s3">3 · Loss design</a> ·
+  <a href="#s4">4 · Local optimizer</a> ·
+  <a href="#s5">5 · RealSense intrinsics</a> ·
+  <a href="#result">Result</a> ·
+  <a href="#files">Scripts</a>
+</div>
+
+<div class="quickstart">
+  <h2>Quick start</h2>
+  <pre><code># 0) real robot silhouette (run with "robot arm" too, then OR them)
+python sam3_text_mask.py &lt;real.png&gt; --prompt "robot"
+
+# 1) launch the PERSISTENT IsaacSim watch-renderer (window opens ONCE, stays open)
+bash scripts/xarm7_runner_v2.sh --mug-variant corl_mug --cm-variant corl_cm \
+  --home-deg "0,-30,0,30,0,60,0" --demo-from-npz --rs-d435i color --cam-w 1280 --cam-h 720 \
+  --table-asset wooden --table-lift-cm=-0.81 --no-depth --no-semantics --capture-rollout \
+  --rollout-out /tmp/cam_watch --cam-match-watch &lt;pose.json&gt; --cam-match-real &lt;real.png&gt;
+
+# 2) auto-optimize the camera (drives the watch via the json; no restarts)
+python optimize_cam_pose.py --w-cen 1.0 --w-area 0.6 --w-dino 0.5 --refine 22 --passes 4</code></pre>
+  <p class="hint" style="margin-bottom:0">Output → <code>data/corl_eval_cam_pose.json</code> + <code>best_overlay.png</code>; feed the pose to data-gen via <code>--cam-baseline-override</code> + <code>--rs-d435i color</code>.</p>
+</div>
+
+<figure class="hero">
+  <img src="camcal_assets/final_overlay.png" alt="final overlay">
+  <figcaption><strong>Result</strong> — [ real RealSense | IsaacSim render | 50/50 blend ]. Robot silhouette IoU&nbsp;<span class="metric">0.894</span>, centroid 1.0% / scale 0.6% off, at the matched RealSense D435i&nbsp;color intrinsic (69.4°). The robot — the calibration anchor — overlaps ~90%.</figcaption>
+</figure>
+
+<h2>The idea</h2>
+<p>For sim-to-real, synthetic data must be rendered from the <span class="key">same camera</span> as the real robot. We hold the xArm7 at its home pose in IsaacSim and search the 6-DOF camera pose (+ fix the RealSense intrinsic) until the rendered robot silhouette matches a real photo. The whole loop is automated and runs against the <em>actual IsaacSim renderer</em> — not a viser approximation — so the matched pose transfers directly to data-gen.</p>
+
+<!-- STAGE 1 -->
+<div class="stage" id="s1">
+  <h2><span class="num">1</span> Real robot silhouette <span class="pill headless">SAM3</span></h2>
+  <p class="desc">Text-prompt SAM3 segments the robot in the real RGB. <code>"robot"</code> catches the base column; <code>"robot arm"</code> is cleaner on the gripper — <span class="key">OR them</span> for the full silhouette. This mask is the alignment target.</p>
+  <p class="file">sam3_text_mask.py &lt;img&gt; --prompt "robot" → <code>&lt;img&gt;_robot_mask.png</code></p>
+  <div class="figure-row">
+    <figure><img src="camcal_assets/real_input.png" alt="real input"><figcaption>real RealSense frame (640×360) — cm left, mug center, xArm7 right</figcaption></figure>
+    <figure><img src="camcal_assets/real_mask.png" alt="real OR mask"><figcaption>OR-union robot mask (52.6k px, 22.8%) — full arm + base column</figcaption></figure>
+  </div>
+  <figure><img src="camcal_assets/mask_and_or.png" alt="AND vs OR"><figcaption><strong>AND (intersection)</strong> drops the base column; <strong>OR (union)</strong> keeps the whole robot — use OR.</figcaption></figure>
+</div>
+
+<!-- STAGE 2 -->
+<div class="stage" id="s2">
+  <h2><span class="num">2</span> Persistent IsaacSim watch-render <span class="pill gui">--cam-match-watch</span></h2>
+  <p class="desc">A gated, additive mode in the runner: build the scene + hold the arm at home <em>once</em>, then loop watching a JSON for <code>{cam_pos, cam_target}</code> and re-render the overlay on each change — <span class="key">no restart, window stays open</span>. ~600 renders become practical (≈1–2 s each vs ~25 s per fresh launch).</p>
+  <p class="file">xarm7_runner_v2.py — early-exit branch before the episode loop (never touches data-gen paths)</p>
+  <div class="nb"><span class="lbl">Why a separate process?</span> viser (websockets 16) and IsaacSim (websockets 12) can't share a process, so the optimizer (viser-free, in <code>.venv</code>) and the IsaacSim renderer (<code>.venv-isaacsim5</code>) talk through the JSON + overlay PNG.</div>
+</div>
+
+<!-- STAGE 3 -->
+<div class="stage" id="s3">
+  <h2><span class="num">3</span> Loss design <span class="pill headless">SAM IoU + centroid + area + DINOv3 + RGB</span></h2>
+  <p class="desc">Plain RGB loss <em>games</em> (a top-down view can match masked pixels without aligning). The discriminative signal is the <span class="key">silhouette IoU</span> — SAM3 the sim render's robot, IoU vs the real mask. Centroid + area terms break the IoU plateau by explicitly recentering + rescaling; DINOv3 + RGB refine appearance.</p>
+  <p class="file">optimize_cam_pose.py — <code>loss = (1−IoU) + 0.2·rgb + w_dino·dino + w_cen·centroid + w_area·|log(area ratio)|</code></p>
+  <figure><img src="camcal_assets/mask_diag.png" alt="mask diagnostic"><figcaption>Diagnostic at the IoU plateau: <span style="color:#16a34a;font-weight:700">green</span>=sim-only spill, <span style="color:#cc0000;font-weight:700">red</span>=real-only, <span style="color:#bb9900;font-weight:700">yellow</span>=overlap. 95% of the real robot was already covered — the cap was the sim robot being ~27% <em>too big</em>. That told us it was a <strong>scale/FOV</strong> problem, not a shape mismatch → fixable.</figcaption></figure>
+  <table>
+    <tr><th>term</th><th>role</th><th>weight</th></tr>
+    <tr><td>1 − IoU</td><td>silhouette overlap (anti-gaming anchor)</td><td>1.0</td></tr>
+    <tr><td>centroid dist</td><td>recenter the robot</td><td>1.0</td></tr>
+    <tr><td>|log area ratio|</td><td>match scale (the 27% spill)</td><td>0.6</td></tr>
+    <tr><td>DINOv3 cos-dist</td><td>semantic fine alignment (mask-gated)</td><td>0.5</td></tr>
+    <tr><td>RGB L1 (mask-gated)</td><td>appearance tie-break</td><td>0.2</td></tr>
+  </table>
+</div>
+
+<!-- STAGE 4 -->
+<div class="stage" id="s4">
+  <h2><span class="num">4</span> Local optimizer <span class="pill headless">Sobol probe → coarse-to-fine SPSA</span></h2>
+  <p class="desc">Stay <span class="key">local to a seed pose</span> — a wide global search picks horrible top-down/side views. Small random probes around the seed, then SPSA-Adam in shrinking-step passes (each restarts from the best, early-stops on no gain). Drives the watch via the JSON; reads the sim panel back from the overlay.</p>
+  <p class="file">optimize_cam_pose.py --from-saved --passes N --step-scale s --seed k</p>
+  <table>
+    <tr><th>stage</th><th>IoU</th><th>what unlocked it</th></tr>
+    <tr><td>RGB-only</td><td>— (gamed)</td><td>converged to a top-down view</td></tr>
+    <tr><td>+ SAM silhouette IoU</td><td>0.70</td><td>discriminative shape signal</td></tr>
+    <tr><td>+ centroid + area</td><td>0.90</td><td>broke the plateau (recenter + rescale)</td></tr>
+    <tr><td>+ RealSense FOV</td><td>0.894</td><td>correct perspective (stage 5)</td></tr>
+  </table>
+</div>
+
+<!-- STAGE 5 -->
+<div class="stage" id="s5">
+  <h2><span class="num">5</span> RealSense intrinsic match <span class="pill gui">--rs-d435i color</span></h2>
+  <p class="desc">The match must use the real camera's FOV, not just compensate scale with distance. RealSense D435i <span class="key">color</span> = focal 17.35&nbsp;mm, aperture 24×13.5&nbsp;mm → <span class="key">HFOV 69.4°</span>, fx=925.</p>
+  <div class="warn"><span class="lbl">Gotcha:</span> <code>sim.set_camera_view()</code> <em>resets</em> the Kit camera focal every call — so the watch was silently rendering at the Kit default (~18.1&nbsp;mm), not the preset. Fix: re-apply <code>_apply_cam_intrinsics(args.rs_d435i)</code> after <em>every</em> <code>set_camera_view</code> in the watch loop. Then re-optimize position at the true FOV.</div>
+</div>
+
+<!-- RESULT -->
+<h2 id="result">Result &amp; how to use it</h2>
+<div class="figure-row">
+  <figure><img src="camcal_assets/before_wrong.png" alt="wild view"><figcaption>A wild global-search view — why the optimizer must stay <em>local</em></figcaption></figure>
+  <figure><img src="camcal_assets/final_overlay.png" alt="final"><figcaption>Final: IoU 0.894, RealSense 69.4° — robot silhouettes coincide</figcaption></figure>
+</div>
+<p>Matched camera (saved → <code>data/corl_eval_cam_pose.json</code>):</p>
+<pre><code>cam_pos    = [-0.2678, 0.4786, 0.3466]
+cam_target = [ 0.5892, -0.0782, 0.0808]
+intrinsic  = RealSense D435i color  (HFOV 69.4°, fx=925, focal 17.35 mm)</code></pre>
+<p>Drop into data-gen (<code>run_corl_xarm7_datagen.sh</code> / the runner):</p>
+<pre><code>--cam-baseline-override="-0.2678,0.4786,0.3466,0.5892,-0.0782,0.0808" \
+--rs-d435i color --cam-w 1280 --cam-h 720</code></pre>
+<div class="nb"><span class="lbl">Residual:</span> the ~10% IoU gap is SAM mask noise + the gripper sub-pose + the cm/mug real-vs-sim positions (not camera-fixable). The robot — the calibration anchor — is well aligned. Further levers: free HFOV fine-tune around 69.4°, or match the exact real arm joints.</div>
+
+<!-- FILES -->
+<h2 id="files">Scripts</h2>
+<table>
+  <tr><th>file</th><th>role</th></tr>
+  <tr><td><code>sam3_text_mask.py</code></td><td>text-prompt SAM3 → binary mask + overlay (real &amp; sim robot)</td></tr>
+  <tr><td><code>xarm7_runner_v2.py</code> <code>--cam-match-watch</code></td><td>persistent IsaacSim watch-render (additive, gated, RealSense intrinsic per-render)</td></tr>
+  <tr><td><code>optimize_cam_pose.py</code></td><td>auto-optimizer: IoU+centroid+area+DINOv3+RGB, local Sobol→SPSA coarse-to-fine</td></tr>
+  <tr><td><code>render_corl_cam_match.py</code></td><td>one-shot home-pose render + [real|sim|blend] overlay (no watch)</td></tr>
+  <tr><td><code>viser_cam_match_corl.py</code></td><td>manual viser drag-to-match (coarse / sanity), with an IsaacSim-render button</td></tr>
+  <tr><td><code>data/corl_eval_cam_pose.json</code></td><td>saved pose + intrinsic; consumed via <code>--cam-baseline-override</code></td></tr>
+</table>
+
+<hr>
+<p class="hint">Venvs: optimizer + SAM3 + DINOv3 in <code>~/Desktop/real2render2real/.venv</code>; the IsaacSim watch in <code>.venv-isaacsim5</code> (via <code>xarm7_runner_v2.sh</code>). DINOv3 ViT-L/16 weights from the torch-hub cache.</p>
+
+</div>
+</body>
+</html>

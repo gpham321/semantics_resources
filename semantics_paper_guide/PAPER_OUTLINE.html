@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semantics as a Present (SAP) — CoRL 2026 Paper Outline</title>
+<style>
+  :root{
+    --indigo:#4f46e5; --indigo-d:#3730a3; --pink:#db2777; --amber:#d97706;
+    --ink:#1f2430; --slate:#5a6273; --line:#e3e6ee; --bg:#fcfcfd;
+    --card:#ffffff; --blue-bg:#e0e7ff; --pink-bg:#fce7f3; --amber-bg:#fef3c7;
+    --green-bg:#dcfce7; --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.6}
+  a{color:var(--indigo);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---- top nav ---- */
+  nav{position:sticky;top:0;z-index:50;background:rgba(252,252,253,.85);backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line);display:flex;gap:1.2rem;padding:.7rem 1.4rem;
+      font-family:var(--mono);font-size:.8rem;flex-wrap:wrap;align-items:center}
+  nav .brand{font-weight:700;color:var(--indigo);margin-right:auto}
+  nav a{color:var(--slate)}
+  nav a:hover{color:var(--ink);text-decoration:none}
+
+  /* ---- hero ---- */
+  header.hero{background:radial-gradient(1200px 500px at 70% -10%,#eef0ff 0%,var(--bg) 60%);
+       padding:4.5rem 1.4rem 3rem;text-align:center;border-bottom:1px solid var(--line)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;
+       text-transform:uppercase;color:var(--pink);background:var(--pink-bg);
+       padding:.3rem .7rem;border-radius:999px;margin-bottom:1.2rem}
+  header.hero h1{font-size:2.7rem;line-height:1.15;margin:.2rem auto;max-width:14ch;
+       background:linear-gradient(90deg,var(--indigo),var(--pink));-webkit-background-clip:text;
+       background-clip:text;color:transparent;font-weight:800}
+  header.hero .sub{font-size:1.18rem;color:var(--slate);max-width:48ch;margin:1rem auto 1.4rem}
+  .authors{font-family:var(--mono);font-size:.85rem;color:var(--slate)}
+  .authors .placeholder{color:var(--pink)}
+  .pills{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.6rem}
+  .pill{font-family:var(--mono);font-size:.78rem;border:1px solid var(--line);
+        background:var(--card);padding:.45rem .9rem;border-radius:8px;color:var(--slate)}
+  .pill b{color:var(--ink)}
+
+  /* ---- layout ---- */
+  main{max-width:960px;margin:0 auto;padding:0 1.4rem 5rem}
+  section{padding:3rem 0 1rem;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:none}
+  h2{font-size:1.7rem;margin:.2rem 0 1rem;display:flex;align-items:baseline;gap:.6rem}
+  h2 .num{font-family:var(--mono);font-size:1rem;color:var(--pink)}
+  h3{font-size:1.15rem;margin:1.8rem 0 .5rem;color:var(--indigo-d)}
+  p{margin:.6rem 0}
+  .lead{font-size:1.05rem}
+
+  /* ---- abstract ---- */
+  .abstract{background:linear-gradient(180deg,#f7f8ff,var(--card));border:1px solid var(--line);
+       border-left:4px solid var(--indigo);border-radius:12px;padding:1.4rem 1.6rem;font-size:1.02rem}
+  .abstract .res{color:var(--slate);font-style:italic}
+
+  /* ---- contribution cards ---- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin:1.2rem 0}
+  .ccard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem;
+       transition:transform .15s ease,box-shadow .15s ease}
+  .ccard:hover{transform:translateY(-3px);box-shadow:0 10px 28px -16px rgba(79,70,229,.5)}
+  .ccard .ic{font-size:1.5rem}
+  .ccard h4{margin:.5rem 0 .3rem;font-size:1rem}
+  .ccard p{font-size:.9rem;color:var(--slate);margin:0}
+  .ccard .badge{font-family:var(--mono);font-size:.66rem;padding:.15rem .5rem;border-radius:6px;
+       background:var(--green-bg);color:#166534;display:inline-block;margin-top:.6rem}
+
+  /* ---- pipeline flow ---- */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:1.5rem 0;
+        background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1rem;overflow:hidden}
+  .step{flex:1 1 120px;min-width:120px;text-align:center;position:relative;padding:.4rem .3rem}
+  .step .dot{width:46px;height:46px;margin:0 auto .5rem;border-radius:12px;display:grid;place-items:center;
+       font-size:1.4rem;background:var(--blue-bg);color:var(--indigo-d);
+       animation:pop .5s ease backwards}
+  .step:nth-child(1) .dot{animation-delay:.0s}
+  .step:nth-child(2) .dot{animation-delay:.12s}
+  .step:nth-child(3) .dot{animation-delay:.24s}
+  .step:nth-child(4) .dot{animation-delay:.36s}
+  .step:nth-child(5) .dot{animation-delay:.48s}
+  .step:nth-child(6) .dot{animation-delay:.6s}
+  @keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+  .step h5{margin:.2rem 0;font-size:.82rem;color:var(--ink)}
+  .step small{font-family:var(--mono);font-size:.66rem;color:var(--slate);display:block;line-height:1.3}
+  .step:not(:last-child)::after{content:"\2192";position:absolute;right:-.35rem;top:1.1rem;
+       color:var(--pink);font-size:1.2rem;animation:slide 1.6s ease-in-out infinite}
+  @keyframes slide{0%,100%{transform:translateX(0);opacity:.5}50%{transform:translateX(3px);opacity:1}}
+  .io{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;margin:.3rem .2rem 0}
+  .io .in{color:var(--indigo)} .io .out{color:var(--pink)}
+
+  /* ---- N x M grid viz ---- */
+  .grafting{display:grid;grid-template-columns:auto 1fr;gap:1.6rem;align-items:center;
+       background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.4rem;margin:1.2rem 0}
+  .seed{text-align:center}
+  .seed .vid{width:92px;height:64px;border-radius:8px;background:linear-gradient(135deg,#1f2430,#3730a3);
+       display:grid;place-items:center;color:#fff;font-size:1.6rem;box-shadow:0 6px 18px -8px rgba(0,0,0,.5)}
+  .seed small{font-family:var(--mono);font-size:.66rem;color:var(--slate);display:block;margin-top:.4rem}
+  .nm-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .cell{aspect-ratio:1;border-radius:7px;background:var(--blue-bg);display:grid;place-items:center;
+       font-size:1rem;opacity:0;animation:fade .5s ease forwards;cursor:default;transition:transform .12s}
+  .cell:hover{transform:scale(1.15);background:var(--pink-bg)}
+  @keyframes fade{to{opacity:1}}
+
+  /* ---- math callout ---- */
+  .math{background:var(--ink);color:#e3e6ee;font-family:var(--mono);border-radius:12px;
+       padding:1.1rem 1.3rem;margin:1rem 0;font-size:.92rem;overflow-x:auto}
+  .math .c{color:#fcd34d}.math .v{color:#7dd3fc}.math .comment{color:#6b7280}
+
+  /* ---- tables ---- */
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+  th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;
+     color:var(--slate);background:#f3f4f8}
+  tr:hover td{background:#fafbff}
+  td code{font-family:var(--mono);font-size:.82rem;background:#f3f4f8;padding:.1rem .35rem;border-radius:4px}
+  .ours{color:var(--indigo);font-weight:600}
+
+  /* status chips */
+  .chip{font-family:var(--mono);font-size:.66rem;padding:.12rem .45rem;border-radius:5px;white-space:nowrap}
+  .built{background:var(--green-bg);color:#166534}
+  .tbd{background:#f3f4f8;color:var(--slate);border:1px dashed #c7cbd6}
+  .crit{background:var(--pink-bg);color:var(--pink)}
+
+  /* ---- scaling plot ---- */
+  .plotwrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.2rem;margin:1.2rem 0}
+  .plotwrap .cap{font-size:.82rem;color:var(--slate);margin-top:.6rem}
+  .legend{display:flex;gap:1.2rem;flex-wrap:wrap;font-family:var(--mono);font-size:.74rem;margin-top:.4rem}
+  .legend span{display:inline-flex;align-items:center;gap:.35rem}
+  .swatch{width:14px;height:4px;border-radius:2px;display:inline-block}
+
+  /* contact-region sketch */
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media(max-width:680px){.twocol,.grafting{grid-template-columns:1fr}}
+
+  /* timeline */
+  .timeline{display:flex;gap:0;margin:1.2rem 0;flex-wrap:wrap}
+  .tnode{flex:1 1 140px;text-align:center;position:relative;padding-top:1.4rem}
+  .tnode::before{content:"";position:absolute;top:6px;left:0;right:0;height:2px;background:var(--line)}
+  .tnode .d{position:absolute;top:0;left:50%;transform:translateX(-50%);width:14px;height:14px;
+       border-radius:50%;background:var(--indigo);border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .tnode.crit .d{background:var(--pink)}
+  .tnode .date{font-family:var(--mono);font-size:.74rem;color:var(--pink);font-weight:600}
+  .tnode .lbl{font-size:.82rem;color:var(--slate)}
+
+  .note{font-size:.85rem;color:var(--slate);background:var(--amber-bg);border-radius:8px;
+        padding:.7rem .9rem;border-left:3px solid var(--amber);margin:1rem 0}
+  ul.tight{margin:.4rem 0;padding-left:1.2rem} ul.tight li{margin:.25rem 0}
+  footer{text-align:center;font-family:var(--mono);font-size:.76rem;color:var(--slate);
+         padding:2.5rem 1rem;border-top:1px solid var(--line)}
+  .kbd{font-family:var(--mono);font-size:.8rem;background:var(--ink);color:#fff;padding:.1rem .4rem;border-radius:5px}
+
+  /* ---- goal panel ---- */
+  .goal-wrap{background:linear-gradient(135deg,#eef0ff 0%,#fce7f3 100%);
+       border:1px solid var(--line);border-radius:16px;padding:1.8rem 1.8rem 1.5rem;
+       box-shadow:0 12px 36px -20px rgba(79,70,229,.35);margin:.4rem 0 1.2rem}
+  .goal-wrap h2{margin-top:0}
+  .goal-headline{font-size:1.35rem;line-height:1.4;color:var(--ink);font-weight:600;margin:.4rem 0 1rem}
+  .goal-headline b{background:linear-gradient(90deg,var(--indigo),var(--pink));-webkit-background-clip:text;
+       background-clip:text;color:transparent;font-weight:800}
+  .goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+  @media(max-width:640px){.goal-grid{grid-template-columns:1fr}}
+  .goal-box{background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem}
+  .goal-box h4{margin:.1rem 0 .5rem;font-size:.95rem;color:var(--indigo-d);
+       font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em}
+  .goal-box ul{margin:.3rem 0;padding-left:1.1rem;font-size:.92rem}
+  .goal-box li{margin:.25rem 0}
+  .goal-arrow{display:flex;align-items:center;justify-content:center;gap:.8rem;
+       font-family:var(--mono);font-size:.85rem;color:var(--slate);margin:1rem 0 .3rem;flex-wrap:wrap}
+  .goal-arrow .chip-in{background:var(--blue-bg);color:var(--indigo-d);padding:.35rem .7rem;border-radius:8px;font-weight:600}
+  .goal-arrow .chip-out{background:var(--pink-bg);color:#9d174d;padding:.35rem .7rem;border-radius:8px;font-weight:600}
+  .goal-arrow .arr{font-size:1.3rem;color:var(--pink)}
+  .goal-why{font-size:.92rem;color:var(--slate);margin-top:1rem;border-top:1px dashed var(--line);padding-top:.9rem}
+  .goal-why b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">🎁 SAP</span>
+  <a href="#goal">Goal</a>
+  <a href="#abstract">Abstract</a>
+  <a href="#intro">1·Intro</a>
+  <a href="#related">2·Related</a>
+  <a href="#method">3·Method</a>
+  <a href="#exp">4·Experiments</a>
+  <a href="#concl">5·Conclusion</a>
+</nav>
+
+<header class="hero">
+  <span class="tag">CoRL 2026 · paper outline · working draft</span>
+  <h1>One Demo, Many Objects</h1>
+  <p class="sub"><b>Semantics as a Present (SAP)</b> — semantic 3D Gaussian-splat alignment for scalable robot demonstration synthesis from a single RGB video.</p>
+  <p class="authors"><span class="placeholder">[Author list TBD]</span> · Stanford ARMLab</p>
+  <div class="pills">
+    <span class="pill">📥 input: <b>1 RGB video</b></span>
+    <span class="pill">📤 output: <b>N×M robot demos</b></span>
+    <span class="pill">🚫 <b>no depth sensor</b></span>
+    <span class="pill">🚫 <b>no teleop</b></span>
+    <span class="pill">🚫 <b>no per-object labels</b></span>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ GOAL ============ -->
+<section id="goal">
+  <div class="goal-wrap">
+    <h2><span class="num">§·</span> Overall Goal</h2>
+    <p class="goal-headline">Make robot demonstrations <b>scale like data</b>: one human video → many robot demos, across many objects, with no depth sensor, no teleoperation, and no per-object labels.</p>
+
+    <div class="goal-arrow">
+      <span class="chip-in">📥 1 RGB video of a human doing the task</span>
+      <span class="arr">→</span>
+      <span class="chip-in">🧩 a library of pre-scanned "cousin" objects</span>
+      <span class="arr">→</span>
+      <span class="chip-out">📤 N × M closed-loop robot demos</span>
+    </div>
+
+    <div class="goal-grid">
+      <div class="goal-box">
+        <h4>What we want to enable</h4>
+        <ul>
+          <li>Recover an object's per-frame SE(3) trajectory from a <b>single RGB video</b> — no depth, no markers.</li>
+          <li><b>Graft</b> that motion onto a family of scanned <i>cousin</i> objects via semantic 3DGS alignment.</li>
+          <li>Cover both <b>rigid placement</b> (mug → coffee-machine) and <b>articulated motion</b> (open drawer) in one framework.</li>
+          <li>Replay in simulation to mint an <b>N×M demonstration set</b> that trains a closed-loop policy.</li>
+        </ul>
+      </div>
+      <div class="goal-box">
+        <h4>What we deliberately avoid</h4>
+        <ul>
+          <li><b>No depth sensor</b> at demo time (BundleSDF / FoundationPose require one).</li>
+          <li><b>No teleoperation</b> per task (the bottleneck we're attacking).</li>
+          <li><b>No per-object CAD or annotation</b> (MimicGen / RoboCasa need hand-built models).</li>
+          <li><b>No retraining</b> per cousin — alignment is closed-form on distilled features.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="goal-why"><b>Why it matters.</b> Imitation learning works when data exists; it does not scale because every demo is hand-collected. If a single phone-shot video can yield dozens of visually diverse, physically valid demos across an object family, the cost of teaching a new manipulation skill drops by orders of magnitude — and the policy inherits the generalization of the cousin set, not the limits of one teleoperator's wrist.</p>
+  </div>
+</section>
+
+<!-- ============ ABSTRACT ============ -->
+<section id="abstract">
+  <h2><span class="num">§0</span> Abstract</h2>
+  <div class="abstract">
+    <p>Collecting robot demonstrations is the bottleneck in imitation learning. We present <b>SAP</b>, which turns a <b>single RGB video</b> of a human performing a manipulation task into a large, visually diverse set of robot demonstrations — with <b>no depth sensor, no teleoperation, and no per-object annotation</b>. Given reference objects pre-scanned as 3D Gaussian splats, we recover the manipulated object's per-frame SE(3) trajectory directly from the video using distilled-DINO + silhouette + monocular depth-ranking losses. We then <i>graft</i> this motion onto a library of scanned <b>cousin</b> objects via region-weighted, semantically-distilled 3DGS alignment: DINO correspondences anchor functional contact regions, and a closed-form transfer maps both <b>rigid placements</b> and <b>articulated motions</b> onto each cousin. Replaying the grafted trajectories in simulation yields an N×M demonstration set that trains a closed-loop policy.</p>
+    <p class="res">[Results — to run: scaling from 1→50+ cousin demos, head-to-head vs. MimicGen / N-teleop, and held-out-cousin generalization on a real robot.]</p>
+  </div>
+  <div class="note">📝 <b>Draft status.</b> Green <span class="chip built">built / validated</span> chips mark infrastructure & numbers that already exist. Dashed <span class="chip tbd">TBD</span> chips and the <i>italic results line</i> mark the experiment gaps still to run before the <b>2026-05-29</b> CoRL deadline.</div>
+</section>
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <h2><span class="num">§1</span> Introduction</h2>
+  <p class="lead">Imitation learning works — when you have demonstrations. Collecting them does not scale: teleoperation is slow and per-object, and existing augmentation either needs hand-built object models (MimicGen, RoboCasa) or a depth sensor at demo time (BundleSDF, FoundationPose).</p>
+  <p>Our key insight: <b>semantic correspondence beats geometric correspondence for motion transfer</b>. Features distilled from DINO into a Gaussian splat match a drawer-front to a drawer-front, or a mug-contact patch to a mug-contact patch, <i>even across wildly different object bodies</i>. So a motion authored once — by tracking one human video — can be re-targeted onto a whole family of "cousin" objects with zero extra annotation. The pipeline has a crisp contract: <b>one RGB video in, N×M robot demos out.</b></p>
+
+  <h3>Contributions</h3>
+  <div class="cards">
+    <div class="ccard"><div class="ic">🎥</div><h4>RGB-only splat pose tracking</h4>
+      <p>Per-frame SE(3) optimization of a reference splat with distilled-DINO + RGB + silhouette + DepthAnything depth-ranking losses; 8-seed multi-start init. No depth sensor.</p>
+      <span class="badge">built · IoU 0.73 / 0.90</span></div>
+    <div class="ccard"><div class="ic">🔗</div><h4>Semantic cross-object transfer</h4>
+      <p>Closed-form motion graft: prismatic <code>Rᵀ·a</code>, revolute <code>(R·ω, R·(p·s)+t)</code>. Translation drops for direction-only motion; scale composes multiplicatively.</p>
+      <span class="badge">built</span></div>
+    <div class="ccard"><div class="ic">🎯</div><h4>Contact-aware region weighting</h4>
+      <p>Click-to-weight semantic ICP with DINO-propagated source+target masks biases alignment toward functional contact regions — not standard in real2sim.</p>
+      <span class="badge">built · 3-stage ICP</span></div>
+    <div class="ccard"><div class="ic">🧩</div><h4>Part-to-part with <code>--no-center</code></h4>
+      <p>Aligns extracted sub-parts while preserving parent-frame coordinates, so one transform aligns the cousin's entire scene.</p>
+      <span class="badge">built</span></div>
+    <div class="ccard"><div class="ic">⚙️</div><h4>Unified rigid + articulated</h4>
+      <p>Rigid placement (mug→coffee-machine) and articulation (open drawer) fall out of <i>one</i> framework — unified, not a kitchen sink.</p>
+      <span class="badge">built</span></div>
+  </div>
+</section>
+
+<!-- ============ RELATED ============ -->
+<section id="related">
+  <h2><span class="num">§2</span> Related Work &amp; Differentiation</h2>
+  <p>SAP sits at the intersection of video-to-pose estimation, demo augmentation, and feature-distilled splats. The axis nobody else occupies: <b>RGB-only, semantic-only, cross-object motion transfer.</b></p>
+  <table>
+    <thead><tr><th>Line of work</th><th>Representative</th><th>How SAP differs</th></tr></thead>
+    <tbody>
+      <tr><td>Human-motion video retarget</td><td>Gen2Act, VideoMimic</td><td>They retarget <i>human motion</i>; we retarget <b>object placement + articulation</b>.</td></tr>
+      <tr><td>Video→pose <b>with depth</b></td><td>BundleSDF, FoundationPose, StablePose</td><td>They require an <b>RGB-D sensor</b>. We use <b>RGB only</b> — depth-ranking from DepthAnything substitutes for the camera.</td></tr>
+      <tr><td>Video→pose RGB-only</td><td>RSRD</td><td>RSRD renders the full scene + CLIP features; we render <b>only the object splat</b> with sharpened-silhouette + distilled-DINO, and 8-seed init handles larger pose ambiguity.</td></tr>
+      <tr><td>Demo augmentation</td><td>MimicGen, RoboCasa, DemoGen</td><td>They need per-object engineering; we <b>zero-shot swap</b> via DINO-aligned splats.</td></tr>
+      <tr><td>DINO-lifted splats</td><td>F3RM, LangSplat, GARField, DIG</td><td>They do retrieval / segmentation; we use the features for <b>cross-object motion transfer</b>.</td></tr>
+      <tr><td>Screw-axis from video</td><td>ScrewSplat, Ditto, PARIS, CARTO</td><td>They estimate an axis on a <i>single</i> object; we <b>transfer the axis across cousins</b> via <code>Rᵀ</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section id="method">
+  <h2><span class="num">§3</span> Method</h2>
+
+  <h3>3.1 &nbsp;Pipeline overview</h3>
+  <div class="io"><span class="in">▸ in: 1 RGB video + reference splats + cousin splat library</span><span class="out">out: N×M demos ▸</span></div>
+  <div class="flow">
+    <div class="step"><div class="dot">🎥</div><h5>Track</h5><small>DINO+RGB+sil+depth → per-frame SE(3)</small></div>
+    <div class="step"><div class="dot">✂️</div><h5>Segment</h5><small>SAM3 text → SAM3D / scanned cousins</small></div>
+    <div class="step"><div class="dot">🎯</div><h5>Align</h5><small>region-weighted semantic ICP</small></div>
+    <div class="step"><div class="dot">🔗</div><h5>Transfer</h5><small>Rᵀ·a prismatic / revolute graft</small></div>
+    <div class="step"><div class="dot">🤖</div><h5>Replay</h5><small>IsaacLab + xArm grasp synthesis</small></div>
+    <div class="step"><div class="dot">🧠</div><h5>Train</h5><small>DP / ACT / π₀ policy</small></div>
+  </div>
+
+  <h3>3.2 &nbsp;RGB-only video → splat pose tracking</h3>
+  <p>We optimize the reference object splat's SE(3) pose per frame (<code>track_with_dino_sam3.py</code>) against four losses: distilled-DINO feature match, RGB photometric, sharpened silhouette, and a DepthAnything-V2 depth-<i>ranking</i> term that supplies metric cues without a depth camera. Two recipe upgrades carry tracking quality on tabletop objects: (i) <b>ground-seeded init</b> — we fit the table plane from the scene splat and seed the multi-start search as an <b>upright orbit</b> about the ground normal rather than a blind <code>WIDE_ROT</code> sphere; and (ii) <b>hard-IoU seed ranking</b> (<code>RANK_BY=equal_iou</code>) so per-seed silhouette IoU dominates the composite score (DINO is only a flip-tiebreaker). Cylindrical objects get a <b>360° yaw-refinement post-step</b> (SSIM + Sobel) since the base loss is rotation-blind on surfaces of revolution. Tracker masks must be pre-propagated SAM3→SAM2 (<code>--masks-dir</code>); the internal SAM3 silently skips frames at its hard-coded 0.5 confidence.</p>
+  <div class="twocol">
+    <div class="note">✅ <b>Frame-0 init.</b> IMG_9232 mug <b>0.73</b> / CM <b>0.90</b> IoU. With the new ground-seeded + <code>equal_iou</code> recipe, <b>corl_pour mug 0.73 → 0.978</b>.</div>
+    <div class="note">✅ <b>Per-frame.</b> Silhouette weight 1000 over 120 iters holds a symmetric mug upright across the carry; rotation-refinement post-step removes cylindrical yaw drift on raw → smoothed poses.</div>
+  </div>
+
+  <h3>3.3 &nbsp;Cousin acquisition &amp; feature distillation</h3>
+  <p>Each cousin is a single photo → 3D splat + UV-textured mesh (SAM3 text mask → SAM3D), or a scanned splat. DINOv3 features are distilled per-Gaussian so downstream alignment is semantic. Text-prompted per-object distillation projects multi-view object probabilities back onto Gaussians.</p>
+  <div class="twocol">
+    <div class="note">✅ SAM3D mug: scale <b>0.944</b>, chamfer <b>60 → 18.9 mm</b> after bidirectional ICP.</div>
+    <div class="note">✅ Per-object distill (laptop): <b>386k → 36.8k</b> Gaussians (9.5%) at p≥0.8, DINO features preserved.</div>
+  </div>
+
+  <h3>3.4 &nbsp;Region-weighted semantic alignment</h3>
+  <p>A 3-stage ICP grafts each cousin into the reference frame: (i) <b>bidirectional unweighted</b> coarse align, (ii) <b>region-weighted</b> refinement that up-weights DINO-matched contact regions (e.g. the mug-contact patch on the coffee machine), and (iii) a <b>centroid-preserving upright projection</b>. For far-out-of-frame regions (the <code>cm10/11/12</code> failure mode) the region weight is amplified from 20× → <b>200×</b> in stage 2 — the threshold recovers the mask, but the <i>weight</i> makes ICP honor it. Part-to-part alignment uses <code>--no-center</code> to keep parent-frame coordinates so one transform moves the cousin's whole scene.</p>
+  <p><b>Hub composition for symmetric objects.</b> Cousin → sparse-reference semantic ICP flips ~10% of symmetric mugs (the flipped solution has a marginally lower loss). We instead align cousins → a <b>dense hub splat</b> (no flips), and compose with a one-shot <i>hub → reference</i> transform. Headless align + viewer-side <code>--load-manual-transform</code> sidesteps the one-process GUI hang.</p>
+  <div class="twocol">
+    <svg viewBox="0 0 240 130" width="100%" style="background:var(--card);border:1px solid var(--line);border-radius:10px">
+      <text x="12" y="18" font-family="var(--mono)" font-size="9" fill="#5a6273">reference object</text>
+      <ellipse cx="55" cy="75" rx="34" ry="40" fill="#dbeafe" stroke="#4f46e5"/>
+      <path d="M82 70 q12 5 0 10" stroke="#db2777" stroke-width="3" fill="none"/>
+      <circle cx="86" cy="75" r="6" fill="#db2777" opacity=".8"/>
+      <text x="150" y="18" font-family="var(--mono)" font-size="9" fill="#5a6273">cousin (diff. shape)</text>
+      <rect x="150" y="48" width="62" height="58" rx="8" fill="#fce7f3" stroke="#db2777"/>
+      <circle cx="150" cy="77" r="6" fill="#db2777" opacity=".8"/>
+      <line x1="92" y1="75" x2="144" y2="77" stroke="#4f46e5" stroke-dasharray="4 3"/>
+      <text x="98" y="70" font-family="var(--mono)" font-size="7.5" fill="#4f46e5">DINO match</text>
+      <text x="60" y="125" text-anchor="middle" font-family="var(--mono)" font-size="8" fill="#166534">contact region ⬆ weighted</text>
+    </svg>
+    <div class="note">✅ <b>21 cousins re-aligned</b> to the canonical reference. Scale clusters by class — mugs <b>0.14–0.18</b>, coffee-machines <b>0.44–0.58</b> — and an out-of-cluster scale flags a misclassification automatically.</div>
+  </div>
+
+  <h3>3.5 &nbsp;Cross-object motion transfer</h3>
+  <p>Given the per-cousin similarity transform <code>(s, R, t)</code>, the reference motion grafts in closed form:</p>
+  <div class="math">
+<span class="comment"># prismatic (drawer) — direction only, translation cancels</span>
+a<span class="v">_cousin</span> = <span class="c">R</span>ᵀ · a<span class="v">_ref</span>
+<span class="comment"># revolute (screw axis) — direction + on-axis point + scale</span>
+(ω, p)<span class="v">_cousin</span> = ( <span class="c">R</span>·ω<span class="v">_ref</span>,  <span class="c">R</span>·(p<span class="v">_ref</span>·s) + <span class="c">t</span> )
+<span class="comment"># rigid placement (mug → coffee machine) — full SE(3) compose</span>
+T<span class="v">_place,cousin</span> = T<span class="v">_align</span> · T<span class="v">_place,ref</span>     <span class="comment"># scale composes multiplicatively</span>
+  </div>
+
+  <h3>3.6 &nbsp;Grounding &amp; grasp synthesis</h3>
+  <p>The tracked motion is snapped to a recovered ground plane, and the human grasp is converted to a robot end-effector: HAMER recovers the MANO hand, which is depth-aligned to the splat and mapped to a parallel-jaw xArm TCP via the Phantom/Bohg pinch-to-gripper rule (<code>Z_TCP = pinch − wrist</code>). A "settled-grasp" window picks the rigid-contact frames. RSRD's Z-only HAMER alignment leaves the (X,Y) at HAMER's wrong-z values; we fix this with a DA-V2-Base monodepth pass plus an X,Y re-back-project at the corrected Z — tightening the bias region from <b>87% → 56%</b> of Gaussians touched.</p>
+  <div class="note">✅ HAMER align: <b>72/101</b> frames, median offset <b>−4.1 cm</b>, splat→meters <b>0.748</b>. Settled-grasp window frames <b>64–75</b> (best ≈ 69, pinch ~28 mm).</div>
+
+  <p><b>One canonical grasp, transferred to all cousins.</b> Rather than re-synthesizing grasps per cousin, we author <b>one</b> force-closure grasp interactively (<code>interactive_hamer_xarm.py</code>, HAMER-biased with a gizmo + perturbation sweep) and <b>transfer it</b> across the cousin family via Sim3, then deepen by +8 mm to absorb residual scale error. The transferred grasps are validated per scale in <code>{0.8, …, 1.2}</code>: <b>16 mugs × 5 scales = 7202 grasps, 0 dropped, 100% re-validated</b> at the OPEN gripper width (collision is checked at the open width, NOT at contact gap, to avoid a false-positive that the original sampler hit).</p>
+
+  <p><b>Per-episode auto grasp-pose selection.</b> Pre-baked IK tables don't survive cousin pose noise, so the runner picks a grasp at runtime: scan grasps × 6 options (NORMAL/FLIP × home / s-tier / new) and accept the first that clears all of <i>reach</i>, <i>self-collision</i>, and <i>ground</i>. Ground clearance uses the lowest point on each arm-link <b>capsule</b> (link1–7); joint-origin checks miss a forearm dipping 11 cm into the table. Cousin IK tables are also a foot-gun for live re-solves — the runner uses <b>IK branch-lock-replay</b> (pre-compute one warm-started chain from the anchor seed, replay it) plus <code>--no-manipulability</code>, so executed joints stay on the same branch as the shown grasp (verified viser-vs-executed to <b>0.2°</b>).</p>
+  <div class="note">✅ Settled grasp #55 transferred to all 16 cousins: <b>30/30</b> valid within ≤ 0.5 cm recovery; +4 mm deepen universal; +8 mm breaks two mugs at scale 1.0 only.</div>
+
+  <h3>3.7 &nbsp;Simulation replay &amp; policy training</h3>
+  <p>Grafted per-cousin trajectories replay in IsaacLab with domain-randomized table material (52-texture pool, MDL-unbind-then-bind workaround for instanced assets), lighting (skybox + sphere lights, color-temperature jitter), camera baseline, and a decomposed L-shaped foam-board <b>poster backdrop</b> mimicking the real RealSense scene. Per-episode goal noise (mug ±6 cm / ±30°, CM ±6 cm / ±12°) and an R2R2R-style <b>CM bias toward the mug</b> (p = 0.7) shape the placement distribution.</p>
+
+  <p><b>Vectorized rendering.</b> The runner is render-latency-bound at ~33 Hz on a single process; we move to a vectorized <code>Xarm7MugTransport</code> ManagerBasedRLEnv that reads the same demo NPZ + grasp tables. Two non-obvious bugs were required to make vec renders match the runner: (i) Fabric tiled-render ignores <i>runtime</i> <code>xformOp:scale</code> on a kinematic prim, so the cousin scale is baked into <code>spawn.scale</code> pre-Fabric (we shard by scale); and (ii) <code>AppLauncher</code> RTX defaults flatten ambient lighting and disable GI/AO, so three <code>carb /rtx</code> settings are forced at launch. With both, RGB L1 drops from <b>51 → 19.6</b>, background L1 = 5.3, PSNR = 18.6 — the residual is table GI-shadow tone, within DR.</p>
+
+  <p><b>Automated camera alignment.</b> We never hand-tune the eval camera. A SAM3-text mask provides the target silhouette; a persistent <code>--cam-match-watch</code> runner re-renders without restarting IsaacSim; SPSA on a composite of SAM <b>IoU</b> + centroid + area + DINOv3 + RGB (RGB alone games) optimizes 6-DOF camera pose, with a 7th DOF (camera roll) patched in post-<code>set_camera_view</code>. A chain-pass schedule shrinks the step scale 0.08 → 0.001 to escape SPSA basins.</p>
+
+  <p>A closed-loop policy (diffusion policy / ACT / π₀ — <span class="chip tbd">arch TBD</span>) trains on the synthesized N×M LeRobot v2.1 dataset (state = EE pose(6) + gripper(2) via FK of recorded joints — <i>never</i> the IK target, which freezes during HOME/PREGRASP; gripper command, not observed joint, to avoid PD-jitter flips in the URDF viewer).</p>
+  <div class="twocol">
+    <div class="note">✅ IsaacLab data-gen (xArm7, iter 32): Cartesian-approach + grasp-hold continuity → <b>4/4</b> success, max track-err <b>0.060 rad</b> (vs 4.66 rad pre-fix).</div>
+    <div class="note">✅ Camera align: <b>IoU 0.9561</b> (front) / <b>0.9284</b> (side, 7-DOF, 2026-06-04 capture). 2000-episode shard launched 2026-06-04.</div>
+  </div>
+</section>
+
+<!-- ============ EXPERIMENTS ============ -->
+<section id="exp">
+  <h2><span class="num">§4</span> Experiments <span class="chip crit" style="font-size:.7rem">to run</span></h2>
+  <p>The infrastructure is built; the experimental campaign is the remaining work. Target tasks and the metrics that move the paper from poster → oral:</p>
+
+  <h3>4.1 &nbsp;Setup</h3>
+  <ul class="tight">
+    <li><b>Hero task</b> <span class="chip tbd">pick</span>: a single real-robot task using <i>both</i> rigid placement and articulation — e.g. <i>open drawer → place mug inside → close drawer</i>, or <i>place mug on coffee-machine → press button</i>.</li>
+    <li><b>Cousin counts</b>: scale from 5→<b>20+</b> mugs, 4→<b>10+</b> coffee-machines, 2→<b>10+</b> drawers. Report exact K×L×J.</li>
+    <li><b>Robot cell</b> <span class="chip tbd">UR5? Franka?</span> + 2–3 held-out cousins for generalization.</li>
+  </ul>
+
+  <h3>4.2 &nbsp;Scaling — the headline figure</h3>
+  <div class="plotwrap">
+    <svg viewBox="0 0 560 300" width="100%" font-family="var(--mono)">
+      <!-- axes -->
+      <line x1="60" y1="250" x2="530" y2="250" stroke="#5a6273" stroke-width="1.5"/>
+      <line x1="60" y1="30"  x2="60"  y2="250" stroke="#5a6273" stroke-width="1.5"/>
+      <!-- gridlines + y labels -->
+      <g fill="#9aa0b0" font-size="10">
+        <line x1="60" y1="206" x2="530" y2="206" stroke="#eef0f5"/><text x="34" y="210">20</text>
+        <line x1="60" y1="162" x2="530" y2="162" stroke="#eef0f5"/><text x="34" y="166">40</text>
+        <line x1="60" y1="118" x2="530" y2="118" stroke="#eef0f5"/><text x="34" y="122">60</text>
+        <line x1="60" y1="74"  x2="530" y2="74"  stroke="#eef0f5"/><text x="34" y="78">80</text>
+        <text x="40" y="254">0</text>
+      </g>
+      <text x="20" y="140" transform="rotate(-90 20 140)" font-size="11" fill="#5a6273">real-robot success %</text>
+      <!-- x labels: 1,5,10,20,50 -->
+      <g fill="#5a6273" font-size="10" text-anchor="middle">
+        <text x="60"  y="266">1</text><text x="150" y="266">5</text>
+        <text x="245" y="266">10</text><text x="350" y="266">20</text><text x="525" y="266">50</text>
+      </g>
+      <text x="295" y="290" text-anchor="middle" font-size="11" fill="#5a6273"># cousin demos (log-ish)</text>
+
+      <!-- SAP saturating curve (projected): pts (1,15)(5,42)(10,58)(20,71)(50,78) -->
+      <!-- map: x 60..525, y 250 - val*2.2 -->
+      <polyline fill="none" stroke="#4f46e5" stroke-width="2.5"
+        points="60,217 150,158 245,122 350,94 525,78"/>
+      <!-- CI band -->
+      <polygon fill="#4f46e5" opacity=".10"
+        points="60,228 150,170 245,134 350,104 525,86 525,70 350,84 245,110 150,146 60,206"/>
+      <g fill="#4f46e5"><circle cx="60" cy="217" r="4"/><circle cx="150" cy="158" r="4"/><circle cx="245" cy="122" r="4"/><circle cx="350" cy="94" r="4"/><circle cx="525" cy="78" r="4"/></g>
+
+      <!-- baseline (b): N teleop, same human-time -->
+      <polyline fill="none" stroke="#db2777" stroke-width="2" stroke-dasharray="6 4"
+        points="60,228 150,200 245,180 350,166 525,150"/>
+      <!-- baseline (c): MimicGen -->
+      <polyline fill="none" stroke="#d97706" stroke-width="2" stroke-dasharray="2 3"
+        points="60,224 150,184 245,156 350,140 525,128"/>
+    </svg>
+    <div class="legend">
+      <span><span class="swatch" style="background:#4f46e5"></span> SAP (ours)</span>
+      <span><span class="swatch" style="background:#db2777"></span> N teleop · same human-time</span>
+      <span><span class="swatch" style="background:#d97706"></span> MimicGen on cousin set</span>
+    </div>
+    <p class="cap">⚠️ <b>Illustrative / projected only</b> — these curves are placeholders to fix the figure layout. Real numbers from the 1→50 sweep go here. The win condition: SAP saturates higher and earlier than per-object augmentation at equal human-time.</p>
+  </div>
+
+  <h3>4.3 &nbsp;Baselines</h3>
+  <table>
+    <thead><tr><th>Baseline</th><th>What it isolates</th><th>Success %</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1 original demo (lower bound)</td><td>value of augmentation at all</td><td>—</td><td><span class="chip tbd">TBD</span></td></tr>
+      <tr><td>N real teleop · equal human-time</td><td>apples-to-apples human budget</td><td>—</td><td><span class="chip tbd">TBD</span></td></tr>
+      <tr><td>MimicGen on same cousin set</td><td>semantic vs per-object engineering</td><td>—</td><td><span class="chip crit">critical</span></td></tr>
+      <tr><td>RoboCasa / DemoGen-equiv</td><td>vs general real2sim2real</td><td>—</td><td><span class="chip tbd">if applicable</span></td></tr>
+      <tr class="ours"><td>SAP (ours)</td><td>—</td><td>—</td><td><span class="chip tbd">TBD</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 &nbsp;Ablations — does each stage earn its place?</h3>
+  <table>
+    <thead><tr><th>Ablation</th><th>Removes</th><th>Hypothesized failure</th></tr></thead>
+    <tbody>
+      <tr><td>pure ICP (no DINO)</td><td>semantic correspondence</td><td>contact regions drift across appearance gaps</td></tr>
+      <tr><td>no region weighting</td><td>contact-aware refinement</td><td>placement misses the functional patch</td></tr>
+      <tr><td>no ground-plane snap</td><td>base-plane alignment</td><td>object floats / tilts off table</td></tr>
+      <tr><td>whole-scene (no <code>--no-center</code>)</td><td>part-to-part alignment</td><td>cousin sub-part decouples from its scene</td></tr>
+      <tr><td>fix scale <code>s=1</code></td><td>scale composition</td><td>size-variant cousins over/under-shoot</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.5 &nbsp;Generalization</h3>
+  <p>Held-out cousins (never aligned during synthesis) at real-robot test time, plus a "visually wild cousins" stress set (unusual colors, logos, shapes) to show DINO carries large appearance gaps.</p>
+</section>
+
+<!-- ============ GRAFTING VIZ ============ -->
+<section>
+  <h2><span class="num">★</span> The core idea, in one picture</h2>
+  <div class="grafting">
+    <div class="seed">
+      <div class="vid">🎥</div>
+      <small>1 RGB<br>human video</small>
+    </div>
+    <div>
+      <div class="nm-grid" id="nmgrid"></div>
+      <p class="cap" style="margin-top:.7rem">One tracked motion → grafted onto every cousin (mug × coffee-machine × drawer) → <b>N×M robot demos</b>, zero extra annotation. <i>Hover the cells.</i></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONCLUSION / TIMELINE ============ -->
+<section id="concl">
+  <h2><span class="num">§5</span> Limitations &amp; Path to CoRL</h2>
+  <ul class="tight">
+    <li><b>Limitations:</b> depends on cousin scans existing; monocular depth-ranking is up-to-scale (resolved per-scene); symmetric objects need the yaw post-step; sim-to-real gap on grasp contact.</li>
+    <li><b>Poster:</b> likely on current story + novelty. <b>Spotlight:</b> plausible with the scaling plot + 2 baselines + real-robot numbers. <b>Oral:</b> needs numerical wins over MimicGen on the same tasks <i>and</i> the unified rigid+articulation hero task on a real robot.</li>
+  </ul>
+
+  <h3>Deadline timeline</h3>
+  <div class="timeline">
+    <div class="tnode"><span class="d"></span><div class="date">now → 05-26</div><div class="lbl">scale cousins · pick hero task · MimicGen baseline</div></div>
+    <div class="tnode crit"><span class="d"></span><div class="date">2026-05-26</div><div class="lbl">CoRL abstract deadline</div></div>
+    <div class="tnode"><span class="d"></span><div class="date">05-26 → 05-29</div><div class="lbl">scaling sweep · real-robot eval · figures</div></div>
+    <div class="tnode crit"><span class="d"></span><div class="date">2026-05-29</div><div class="lbl">CoRL paper deadline</div></div>
+  </div>
+  <div class="note">🔭 <b>Biggest open gaps</b> (from <code>PAPER_NOTES.md</code>): scaling numbers, head-to-head baselines, real-robot success rates, held-out generalization. The method/infra is done — this is an execution sprint.</div>
+</section>
+
+</main>
+
+<footer>
+  SAP · CoRL 2026 working outline · generated from PAPER_NOTES.md + pipeline guides<br>
+  Open with <span class="kbd">xdg-open PAPER_OUTLINE.html</span> · edit sections inline, swap projected plots for real runs.
+</footer>
+
+<script>
+  // build the N×M cousin grid with staggered fade-in
+  const grid = document.getElementById('nmgrid');
+  const icons = ['☕','🫖','🍵','🏺','🥤','🍶'];
+  for(let i=0;i<24;i++){
+    const c=document.createElement('div');
+    c.className='cell';
+    c.textContent=icons[i%icons.length];
+    c.style.animationDelay=(i*0.04)+'s';
+    grid.appendChild(c);
+  }
+</script>
+</body>
+</html>

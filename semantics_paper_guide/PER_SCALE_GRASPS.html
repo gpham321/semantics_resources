@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Per-Scale Grasps — recover + augment</title>
+<style>
+  :root {
+    --bg: #fcfcfd; --fg: #1f2430; --muted: #5a6273; --line: #e3e6ee;
+    --code-bg: #f3f4f8; --accent: #2563eb; --accent-soft: #dbeafe;
+    --green: #16a34a; --green-soft: #dcfce7; --amber: #d97706; --amber-soft: #fef3c7;
+    --rose: #db2777; --rose-soft: #fce7f3; --indigo: #4f46e5; --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 34px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0; border: 1px solid var(--line); }
+  pre code { background: none; padding: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .pill.gui { background: var(--accent-soft); color: var(--accent); }
+  .pill.headless { background: var(--amber-soft); color: var(--amber); }
+  .pill.done { background: var(--green-soft); color: var(--green); }
+  .stage { border: 1px solid var(--line); border-radius: 12px; padding: 20px 24px; margin: 18px 0; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  figure { margin: 14px 0; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--code-bg); font-weight: 600; }
+  .key { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .bad { background: var(--rose-soft); border-left: 3px solid var(--rose); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+  .ga { background: #5ac878; } .or { background: #f0a03c; } .bl { background: #5a96f0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 30px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Per-Scale Grasps — recover + augment <span class="pill done">corl xArm7</span></h1>
+<p class="sub">Re-validate every cousin-mug grasp at multiple sizes, translationally perturb the ones that break, and mine extra valid grasps — producing a <code>grasps_per_scale.json</code> per mug for the scaled-USD / IK-table bake. &nbsp;·&nbsp; 2026-05-26</p>
+
+<div class="note">
+<b>The point.</b> Scaling a mug changes its contact geometry, so a grasp that was force-closure-valid at 1.0× can go invalid at another scale. For every existing grasp, at each scale we (1) scale its contact point with the mesh and re-check validity, (2) <b>recover</b> invalid grasps with a translational local search, and (3) <b>augment</b> — mine extra valid grasps around each seed. Result on 16 mugs × {0.8, 0.9, 1.0, 1.1, 1.2, 1.5}: <b>8800 grasps, 0 dropped, 100% independently re-validated.</b> (1.5× added later via <code>--merge</code>: 1598 grasps, 24 recoveries, gaps up to 53 mm.)
+</div>
+
+<h2>Why a fixed offset doesn't work — the force-closure theorem</h2>
+<p>You can't just shift the gripper pose by a constant when the mug grows; the grasp scales, and whether it stays a valid grasp depends on the scale <em>mode</em>:</p>
+<table>
+<tr><th>Scale mode</th><th>Force closure</th><th>What must be recomputed</th></tr>
+<tr><td><b>Uniform</b> <code>diag(s,s,s)</code></td><td><span class="dot ga"></span><b>Preserved</b> — a similarity transform is angle-preserving, so the grasp-line ↔ normal angles (the force-closure condition) are identical. Only the contact gap widens.</td><td>Just re-check the gap fits the gripper + recompute <code>gripper_close</code>.</td></tr>
+<tr><td><b>Z-only / anisotropic</b> <code>diag(1,1,s)</code></td><td><span class="dot or"></span><b>NOT preserved</b> — normals transform by <code>diag(1,1,1/s)</code> and renormalize (different factor than the grasp line), so grasps genuinely lose closure.</td><td>Must re-run <code>check_antipodal</code> and prune/recover.</td></tr>
+</table>
+<p>This is borne out empirically: uniform 0.8–1.2 needed only <b>15</b> translational recoveries across all 80 mug×scale combos, and <b>0</b> grasps were unrecoverable.</p>
+
+<div class="bad">
+<b>Validity gotcha that bit the first run (2.5% "valid").</b> Collision must be checked at the gripper's <b>open</b> width, not the contact gap. Closing to the measured gap presses the pads into the surface → trimesh flags a <em>false</em> collision. The editor's real definition: a grasp is valid iff <code>check_antipodal</code> reports force-closure contact <b>AND</b> the gripper is collision-free at <em>some</em> open width in <code>gap + {12,20,30,40} mm</code> (it opens wider to straddle the mug). This reproduces the editor's 97–100% and re-validates <b>561/565 (99.3%)</b> of the existing grasps.
+</div>
+
+<h2>Results</h2>
+<figure>
+  <img src="perscale_assets/fig_counts.png" alt="grasps per scale, base vs augmented">
+  <figcaption><span class="dot ga"></span>base (kept + recovered) &nbsp; <span class="dot bl"></span>augmented. Augmentation roughly doubles the count at every scale; totals 1372 / 1414 / 1394 / 1488 / 1534 for 0.8 / 0.9 / 1.0 / 1.1 / 1.2×.</figcaption>
+</figure>
+<figure>
+  <img src="perscale_assets/fig_recovered.png" alt="recovered grasps heatmap">
+  <figcaption>Grasps recovered by the translational search, per mug × scale — concentrated at 1.2× and on the handled / asymmetric mugs (corl_mug, mug6). <b>Zero</b> grasps were dropped anywhere.</figcaption>
+</figure>
+
+<h2>Pipeline</h2>
+
+<div class="stage">
+<h3>1 · Baseline validation <span class="pill headless">headless</span></h3>
+<p>Confirm the existing grasps pass the editor's force-closure + collision-free definition before scaling — and pin down the validity rule. Result: <b>561/565 (99.3%)</b> valid (4 borderline: corl_mug 2, mug9 2).</p>
+</div>
+
+<div class="stage">
+<h3>2 · Generate per-scale grasps <span class="pill headless">headless</span></h3>
+<p>For each mug × scale: scale the contact point with the mesh, re-check validity, recover invalid grasps by jittering the TCP position in its own frame (radius ramps 0→<code>--jitter-cm</code> over <code>--max-tries</code>), and mine <code>--augment-per-seed</code> extra valid grasps around each seed. Each kept grasp also emits its 180°-approach twin. Reuses <code>interactive_hamer_xarm.check_antipodal</code> + <code>make_gripper_collision_mesh</code> (cached by 1 mm width bucket — it loads 7 STLs + URDF FK per call) and <code>viser_hand_gripper_toggle.drive_for_width</code> for <code>gripper_close</code>.</p>
+<pre><code>python perturb_grasps_per_scale.py                                  # all mugs, uniform 0.8..1.2
+python perturb_grasps_per_scale.py --mugs y2 mug1 --scales 0.8 1.2
+python perturb_grasps_per_scale.py --scales 1.5 --merge             # ADD a scale, keep existing keys
+python perturb_grasps_per_scale.py --mode zonly --scales 0.8 1.2    # anisotropic height</code></pre>
+<p>Writes <code>&lt;mug&gt;/grasps/grasps_per_scale.json</code> (keyed by scale tag <code>"0.80".."1.20"</code> or <code>"z0.80"</code>), each grasp carrying <code>position, orientation, width (open), close_gap_mm, gripper_close, perturbed, augmented, score</code>, plus <code>grasps_per_scale_summary.json</code>.</p>
+</div>
+
+<div class="stage">
+<h3>3 · Independent re-validation <span class="pill headless">headless</span></h3>
+<p>Rebuild each scale's mesh from scratch and re-check <em>every</em> stored grasp passes force-closure + collision-free on its own scale's mesh — does not trust the writer. Result: <b>7202/7202 (100%)</b>.</p>
+<pre><code>python validate_grasps_per_scale.py</code></pre>
+</div>
+
+<div class="stage">
+<h3>4 · Viewer <span class="pill gui">viser</span></h3>
+<p>Browse the per-scale collections: pick a mug + scale, see a ghost gripper at every grasp colored by category. Switch scales to watch the augmented grasps densify and spot the orange recoveries where scaling forced a fix.</p>
+<pre><code>python view_grasps_per_scale.py --mug corl_mug --port 8087   # http://localhost:8087</code></pre>
+<p><span class="dot ga"></span>green = kept (valid as-is) &nbsp; <span class="dot or"></span>orange = recovered (translationally perturbed) &nbsp; <span class="dot bl"></span>cyan = augmented. Toggles per category, mug-mesh on/off, gripper opacity.</p>
+</div>
+
+<div class="key">
+<b>Knobs.</b> <code>--scales</code> (any list), <code>--mode uniform|zonly</code>, <code>--max-tries 300</code>, <code>--jitter-cm 2.0</code> (search radius), <code>--squeeze-mm 3</code>, <code>--augment-per-seed 4</code>, <code>--min-sep-mm 5</code>. Validity is pivot-invariant, so meshes are scaled about the centroid in the editor frame (<code>centre + scale to REAL_MUG_HEIGHT=0.10</code>, exactly <code>compute_grasp_close_values.py:47-49</code>); deployment grounding stays downstream in <code>build_cousin_usds.py</code> / <code>ground_cousin_grasps.py</code>.
+</div>
+
+<h2>Downstream</h2>
+<p>The per-scale grasp files feed the scaled-USD + slim IK-table bake (one variant per <code>(mug, scale)</code>, cycled via <code>xarm7_runner_v2 --mug-pool</code>). The runner re-solves IK live and reads only <code>T_grasp_body</code> + frame-0 seed + <code>gripper_close</code> from each table — see <code>DUALSEED_IK.html</code> and the cousin IK-table slim builder.</p>
+
+</div>
+</body>
+</html>

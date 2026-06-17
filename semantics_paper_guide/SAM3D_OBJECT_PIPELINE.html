@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SAM3 + SAM3D Object Pipeline — How to run</title>
+<style>
+  :root {
+    --bg: #fcfcfd;
+    --fg: #1f2430;
+    --muted: #5a6273;
+    --line: #e3e6ee;
+    --code-bg: #f3f4f8;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --amber: #d97706;
+    --amber-soft: #fef3c7;
+    --rose: #db2777;
+    --rose-soft: #fce7f3;
+    --indigo: #4f46e5;
+    --indigo-soft: #e0e7ff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; padding: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    color: var(--fg); background: var(--bg);
+  }
+  .page { max-width: 940px; margin: 0 auto; padding: 32px 28px 96px; }
+  h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { margin: 32px 0 12px; font-size: 19px; font-weight: 600; }
+  h3 { margin: 18px 0 8px; font-size: 15px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  code, pre, kbd { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); padding: 14px 16px; border-radius: 8px;
+    overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
+    border: 1px solid var(--line);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; vertical-align: middle;
+    margin-left: 6px; letter-spacing: 0.02em;
+  }
+  .pill.gui      { background: var(--accent-soft); color: var(--accent); }
+  .pill.cli      { background: var(--amber-soft); color: var(--amber); }
+  .pill.viewer   { background: var(--rose-soft); color: var(--rose); }
+  .pill.done     { background: var(--green-soft); color: var(--green); }
+  .pill.input    { background: var(--indigo-soft); color: var(--indigo); }
+  .stage {
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 24px; margin: 18px 0;
+    background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .stage h2 { margin: 0 0 6px; display: flex; align-items: baseline; }
+  .stage h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: white;
+    font-size: 13px; font-weight: 700; margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .stage .desc { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  .stage .file {
+    color: var(--muted); font-size: 12px; margin: 4px 0 10px;
+  }
+  .key { font-weight: 600; color: var(--fg); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
+  }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); background: var(--code-bg); }
+  td code { font-size: 0.92em; }
+  .nb {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px;
+  }
+  .nb .lbl { font-weight: 700; color: var(--accent); margin-right: 4px; }
+  .nb.warn { background: var(--amber-soft); border-left-color: var(--amber); }
+  .nb.warn .lbl { color: var(--amber); }
+  .arrow {
+    text-align: center; font-size: 22px; color: var(--muted);
+    margin: -2px 0; user-select: none;
+  }
+  .toc { font-size: 13px; margin: 0 0 24px; color: var(--muted); }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  ul.compact { margin: 6px 0; padding-left: 22px; }
+  ul.compact li { margin: 3px 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 28px 0; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  .quickstart {
+    background: linear-gradient(135deg, var(--indigo-soft) 0%, white 50%);
+    border: 1px solid var(--indigo);
+    border-radius: 12px; padding: 18px 22px; margin: 0 0 24px;
+  }
+  .quickstart h2 { margin-top: 0; color: var(--indigo); }
+  .quickstart pre { background: white; }
+  .metric-table td:nth-child(2), .metric-table td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>SAM3 + SAM3D Object Pipeline</h1>
+<p class="sub">From a single RGB image → text-prompted mask → 3D Gaussian splat (.ply) + UV-textured mesh (.obj) → bidirectional ICP alignment with viser overlay. All deps live on this machine; no HuggingFace Spaces required.</p>
+
+<p class="toc">
+  <strong>Stages:</strong>
+  <a href="#s1">1. Launch Gradio UI</a> ·
+  <a href="#s2">2. Mask via text prompt</a> ·
+  <a href="#s3">3. Generate 3D (splat + mesh)</a> ·
+  <a href="#s4">4. Unzip the mesh</a> ·
+  <a href="#s5">5. Bidir-ICP align + viser overlay</a> ·
+  <a href="#alt">Alternative: pure-CLI path</a> ·
+  <a href="#ref">Reference run (bzh5ej9v, 2026-05-21)</a>
+</p>
+
+<div class="quickstart">
+<h2>TL;DR — the full happy path</h2>
+<pre><code># 1. Launch combined SAM3 + SAM3D Gradio UI (one terminal, leave running)
+cd ~/Desktop/sam3 &amp;&amp; conda activate semantic_splatting
+python segment_with_text_ui.py
+# → http://localhost:7861
+
+# 2. In the browser: upload image, enter text prompt, click "Segment",
+#    inspect mask, then click "Generate 3D" — emits to ~/Downloads/:
+#      sam3d_output_&lt;hash&gt;.ply           (Gaussian splat, ~40-50 MB)
+#      sam3d_output_&lt;hash&gt;_mesh.zip      (mesh.obj + material.mtl + texture.png)
+
+# 3. Unzip the mesh next to the splat
+HASH=bzh5ej9v   # ← copy the hash from your downloaded filenames
+mkdir -p ~/Downloads/sam3d_output_${HASH}
+unzip -o ~/Downloads/sam3d_output_${HASH}_mesh.zip -d ~/Downloads/sam3d_output_${HASH}/
+
+# 4. Bidirectional ICP align mesh → splat, launch viser overlay
+cd ~/Desktop/armlab_splat_tracking
+source ~/Desktop/real2render2real/.venv/bin/activate
+python align_sam3d_mesh_to_splat.py \
+    --splat ~/Downloads/sam3d_output_${HASH}.ply \
+    --mesh  ~/Downloads/sam3d_output_${HASH}/sam3d_output_${HASH}.obj \
+    --out   ~/Downloads/sam3d_output_${HASH}/mesh_aligned.obj \
+    --port  8087
+# → http://localhost:8087</code></pre>
+</div>
+
+<!-- ─────────── Stage 1 ─────────── -->
+<div class="stage" id="s1">
+  <h2><span class="num">1</span>Launch the Gradio UI<span class="pill gui">GUI :7861</span></h2>
+  <p class="desc">A single Gradio app combines SAM3 (text-prompted segmentation) and SAM3D (image+mask → Gaussian splat + UV-textured mesh). One window, one workflow.</p>
+  <p class="file"><code>~/Desktop/sam3/segment_with_text_ui.py</code></p>
+
+  <pre><code>cd ~/Desktop/sam3
+conda activate semantic_splatting
+python segment_with_text_ui.py
+# Loads SAM3 model (~10 s warm-up), then prints:
+#   Running on local URL:  http://0.0.0.0:7861</code></pre>
+
+  <table>
+    <thead><tr><th>Panel</th><th>Inputs</th><th>Outputs</th></tr></thead>
+    <tbody>
+      <tr><td>Segmentation</td><td>Image + text prompt + confidence slider (default 0.5)</td><td>B&amp;W mask preview + Download Mask</td></tr>
+      <tr><td>3D Generation</td><td>(reuses the image + mask from above)</td><td>Download PLY + Download Mesh (zip)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="nb"><span class="lbl">Note.</span> SAM3 only loads once at startup. SAM3D loads on first <em>Generate 3D</em> click (~5–10 s extra). Keep the terminal running between objects — restarting reloads both models.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ─────────── Stage 2 ─────────── -->
+<div class="stage" id="s2">
+  <h2><span class="num">2</span>Get a clean mask via text prompt<span class="pill input">Image → Mask</span></h2>
+  <p class="desc">Open <code>http://localhost:7861</code> in a browser. Drag an image into the upload panel, type a noun phrase, hit <em>Segment</em>.</p>
+
+  <h3>What works as a prompt</h3>
+  <ul class="compact">
+    <li>Simple noun phrases: <code>"coffee mug"</code>, <code>"protein shaker bottle"</code>, <code>"white dish"</code>, <code>"black coffee maker"</code></li>
+    <li>SAM3 has been seen failing on domain-specific names — <code>"protein shake"</code> ↦ 0 detections; <code>"bottle"</code> ↦ 0.98. Always retry with a more generic alternative before lowering confidence.</li>
+    <li>Lower the confidence slider toward <code>0.2</code> for novel classes (protein-shake tubs, weird cousin mugs). For everyday objects 0.5 is fine.</li>
+  </ul>
+
+  <h3>What makes a SAM3D-friendly mask</h3>
+  <ul class="compact">
+    <li>Single connected component (the object), no stray holes inside, no background bleed.</li>
+    <li>Tight around the object — SAM3D back-projects the masked RGBA, so loose masks pull background pixels into the 3D model and corrupt the texture.</li>
+    <li>If you need to clean up: download the mask, fix in GIMP / Photoshop / <code>Pillow</code>, re-upload as a custom mask in Stage 3 (the UI also accepts a manually-edited mask).</li>
+  </ul>
+
+  <div class="nb"><span class="lbl">Tip.</span> Click around in the mask preview panel to confirm the mask is bound to the object you wanted, not a logo / decal on it. SAM3's open-vocab head sometimes prefers texture over geometry.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ─────────── Stage 3 ─────────── -->
+<div class="stage" id="s3">
+  <h2><span class="num">3</span>Generate 3D — splat + UV-textured mesh<span class="pill gui">Click → Download</span></h2>
+  <p class="desc">Click <em>Generate 3D</em>. SAM3D runs <code>with_mesh_postprocess=True, with_texture_baking=True</code> (nvdiffrast on RTX 5090, ~25 s/object). When it finishes, two downloads light up.</p>
+
+  <table>
+    <thead><tr><th>Download</th><th>Path</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>PLY</td>
+        <td><code>~/Downloads/sam3d_output_&lt;hash&gt;.ply</code></td>
+        <td>3DGS Gaussian splat (Inria PLY format) — ~600k Gaussians, ~46 MB. Loadable in <code>load_object_splat.py</code> and <code>gsplat</code>.</td>
+      </tr>
+      <tr>
+        <td>Mesh (zip)</td>
+        <td><code>~/Downloads/sam3d_output_&lt;hash&gt;_mesh.zip</code></td>
+        <td>3-file bundle: <code>.obj</code> (~11k verts), <code>material.mtl</code>, <code>material_0.png</code> (UV-baked texture). ~1–2 MB.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="nb warn"><span class="lbl">Gotcha.</span> The hash (<code>bzh5ej9v</code>, <code>aav2intn</code>, etc.) is a Python <code>tempfile.mktemp</code> suffix — it's random per click. Both files for one object share the same hash. The mesh zip <em>only</em> exists if you click "Generate 3D" again from the same session, so don't close the browser before downloading both.</div>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ─────────── Stage 4 ─────────── -->
+<div class="stage" id="s4">
+  <h2><span class="num">4</span>Unzip the mesh next to the splat<span class="pill cli">CLI</span></h2>
+  <p class="desc">The aligner script needs the <code>.obj</code> on disk (not still inside the zip). Standard pattern is to put both the unzipped mesh dir and the source PLY in the same parent so paths are short.</p>
+
+  <pre><code>HASH=bzh5ej9v   # or whatever your downloaded hash is
+mkdir -p ~/Downloads/sam3d_output_${HASH}
+unzip -o ~/Downloads/sam3d_output_${HASH}_mesh.zip -d ~/Downloads/sam3d_output_${HASH}/
+ls -la  ~/Downloads/sam3d_output_${HASH}/
+#   sam3d_output_&lt;hash&gt;.obj    ← what we hand to ICP
+#   material.mtl
+#   material_0.png             ← UV texture (sits beside .obj for blender / viser to find)</code></pre>
+</div>
+
+<div class="arrow">↓</div>
+
+<!-- ─────────── Stage 5 ─────────── -->
+<div class="stage" id="s5">
+  <h2><span class="num">5</span>Bidirectional ICP align + viser overlay<span class="pill viewer">viser :8087</span></h2>
+  <p class="desc">Trellis (the backbone SAM3D uses) emits the mesh and the splat in <em>different axis conventions</em> — there's a Y↔Z swap baked in. The script tries Rx(0°), Rx(+90°), Rx(-90°), Rx(180°) as init rotations, picks the lowest pre-ICP chamfer, then runs <strong>rigid bidirectional ICP</strong> (scale fixed at 1). Add <code>--learn-scale</code> to opt into Umeyama scale — measured gain is ~0.3 mm on SAM3D pairs (see <a href="#ref">ablation</a>).</p>
+  <p class="file"><code>~/Desktop/armlab_splat_tracking/align_sam3d_mesh_to_splat.py</code></p>
+
+  <pre><code>cd ~/Desktop/armlab_splat_tracking
+source ~/Desktop/real2render2real/.venv/bin/activate
+
+python align_sam3d_mesh_to_splat.py \
+    --splat ~/Downloads/sam3d_output_${HASH}.ply \
+    --mesh  ~/Downloads/sam3d_output_${HASH}/sam3d_output_${HASH}.obj \
+    --out   ~/Downloads/sam3d_output_${HASH}/mesh_aligned.obj \
+    --port  8087</code></pre>
+
+  <h3>What the script does</h3>
+  <ol class="compact">
+    <li>Loads the splat PLY (means + RGB from SH degree-0 + sigmoid'd opacity).</li>
+    <li>Loads the source mesh verts.</li>
+    <li><span class="key">Axis init.</span> Computes pre-ICP chamfer for each of <code>{0°, +90°, −90°, 180°}</code> rotations about X. Keeps the best.</li>
+    <li><span class="key">Bidir ICP (rigid by default).</span> Calls <code>run_bidirectional_icp(..., learn_scale=False)</code> from <code>load_object_splat.py</code> — runs forward (mesh → splat means) + reverse (splat means → mesh) correspondences with scale fixed at 1.0. The Gaussian-puffiness floor (~18–20 mm on dense splats) dominates over any sub-1% scale tweak, so rigid is the default. Pass <code>--learn-scale</code> to enable Umeyama scale; useful on objects with substantial mesh-envelope vs Gaussian-cloud asymmetry (e.g. cousin TSDF meshes where scale lands at ~0.16–0.17).</li>
+    <li>Writes the transformed mesh to <code>--out</code> (verts only; <code>.mtl</code> + texture stay in place — open with any OBJ viewer or Blender).</li>
+    <li>Launches a viser server with both the splat and the aligned mesh overlaid; transform controls let you nudge manually if needed.</li>
+  </ol>
+
+  <table>
+    <thead><tr><th>CLI knob</th><th>Default</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>--port</code></td><td>8087</td><td>viser port — preflight-check that nothing else is listening (<code>ss -tln | grep ':8087'</code>) or viser falls back silently</td></tr>
+      <tr><td><code>--icp-iters</code></td><td>100</td><td>bidir ICP iters; bump to 200 if chamfer plateaus high</td></tr>
+      <tr><td><code>--voxel</code></td><td>0.005 m</td><td>downsample voxel for KNN correspondences; smaller = more pts = slower</td></tr>
+      <tr><td><code>--out</code></td><td>(none)</td><td>where to save the transformed <code>.obj</code>; if omitted the viser still launches but nothing is persisted</td></tr>
+      <tr><td><code>--learn-scale</code></td><td>off</td><td>opt into Umeyama scale (default rigid). On SAM3D ↔ splat pairs this buys ~0.3 mm; useful only when mesh envelope strongly disagrees with the Gaussian cloud extent</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What to look at in viser</h3>
+  <ul class="compact">
+    <li>Toggle the splat / mesh visibility — confirm the textured mesh now sits <em>inside</em> the Gaussian cloud (not 90° rotated, not offset).</li>
+    <li>The fixed transform (Rx init + ICP R + scale) is printed in the terminal. If the script ran via <code>| tail -N</code> in a background bash, stdout is buffered — compute chamfer + scale from the saved <code>mesh_aligned.obj</code> separately (see <a href="#ref">Reference run</a>).</li>
+    <li>Use the on-screen TransformControls to nudge if needed; the viser GUI has a "Save current transform" button that bakes any manual delta into a sibling <code>.npz</code>.</li>
+  </ul>
+
+  <div class="nb warn"><span class="lbl">Why the chamfer floors around 15–25 mm.</span> Gaussian centers sit volumetrically <em>off</em> the surface (puffiness) — a perfect surface mesh will show ~15–25 mm chamfer to splat means no matter what. That's the floor. Scale ratios drop to ~0.7–0.95 depending on object geometry (mesh envelope is tighter than the Gaussian cloud's extent). See <code>reference_splat_mesh_alignment.md</code> for the full discussion.</div>
+</div>
+
+<hr>
+
+<!-- ─────────── Alternative path ─────────── -->
+<h2 id="alt">Alternative: pure-CLI path (no Gradio)</h2>
+<p class="sub">When you already have an image + mask on disk and want to run headless, skip the UI and call SAM3D directly. Useful for batch processing.</p>
+
+<div class="stage">
+  <h3>Per-object 3D from image + mask</h3>
+  <p class="file"><code>~/Desktop/sam-3d-objects/generate_ply.py</code> (UV-textured) · <code>generate_ply_vc.py</code> (vertex-colored A/B)</p>
+
+  <pre><code>cd ~/Desktop/sam-3d-objects
+conda activate semantic_splatting
+
+# UV-textured mesh (preferred — matches the Gradio output)
+python generate_ply.py \
+    ~/Downloads/my_object.jpg \
+    ~/Downloads/my_object_mask.png \
+    ~/Downloads/my_object.ply
+# Writes:
+#   my_object.ply              (Gaussian splat)
+#   my_object.obj              (mesh — same dir as .ply, no zip wrapper)
+#   my_object.mtl + texture    (alongside)
+
+# Add --no-mesh to skip the OBJ export entirely
+python generate_ply.py img.jpg mask.png out.ply --no-mesh</code></pre>
+
+  <p>You still need a SAM3 mask. The same project's CLI:</p>
+  <pre><code>cd ~/Desktop/sam3
+conda activate semantic_splatting
+python segment_with_text.py ~/Downloads/my_object.jpg "coffee mug" \
+    --output ~/Downloads/my_object_mask.png</code></pre>
+
+  <div class="nb"><span class="lbl">When to prefer CLI.</span> Batch over a directory, or if you want fine-grained control over the SAM3D config (<code>with_mesh_postprocess</code>, <code>seed</code>, <code>use_vertex_color</code>). The Gradio UI is faster for one-offs because the SAM3 backbone stays warm in memory.</div>
+</div>
+
+<hr>
+
+<!-- ─────────── Reference run ─────────── -->
+<h2 id="ref">Reference run: <code>bzh5ej9v</code> (2026-05-21)</h2>
+<p class="sub">Validation numbers from the 16:05 run earlier today — drop-in expectations for any new object on this machine.</p>
+
+<div class="stage">
+  <table class="metric-table">
+    <thead><tr><th>Quantity</th><th>Value</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Splat points</td><td>683,200</td><td>3DGS, SH degree 0</td></tr>
+      <tr><td>Mesh verts</td><td>11,370</td><td>UV-textured OBJ</td></tr>
+      <tr><td>Pre-ICP chamfer (source mesh ↔ splat)</td><td>59.98 mm</td><td>Trellis axis-convention mismatch</td></tr>
+      <tr><td>Post-ICP chamfer (aligned mesh ↔ splat)</td><td><strong>18.90 mm</strong></td><td>3.2× tighter; on the Gaussian-puffiness floor</td></tr>
+      <tr><td>Derived scale (diag aligned / diag source)</td><td><strong>0.944</strong></td><td>scale-aware run; matches the ~0.95 sam3d-mesh-to-splat regime in memory</td></tr>
+      <tr><td>Best init rotation</td><td>Rx(+90°) <em>or</em> Rx(−90°)</td><td>Selected by lowest pre-ICP chamfer</td></tr>
+      <tr><td>Wall time</td><td>~30 s</td><td>RTX 5090, idle GPU</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scale-aware vs rigid ablation (y_cm6, 2026-05-21)</h3>
+  <p>Same object, same Rx(+90°) init, with and without <code>--learn-scale</code>:</p>
+  <table class="metric-table">
+    <thead><tr><th>Method</th><th>Scale</th><th>Post-ICP chamfer</th></tr></thead>
+    <tbody>
+      <tr><td>pre-ICP (Rx+90° init only)</td><td>1.000</td><td>19.87 mm</td></tr>
+      <tr><td><code>--learn-scale</code> (Umeyama)</td><td>0.926</td><td>20.26 mm</td></tr>
+      <tr><td><strong>rigid (default)</strong></td><td>1.000</td><td>20.60 mm</td></tr>
+    </tbody>
+  </table>
+  <p class="hint">Verdict: rigid is the right default. The Rx(+90°) init alone already hits the Gaussian-puffiness floor, so scale-aware only buys ~0.3 mm at the cost of a non-1 scale that downstream tools (USD authoring, IsaacSim asset import) then have to account for.</p>
+
+  <h3>How to reproduce the numbers from the saved <code>.obj</code></h3>
+  <pre><code>cd ~/Desktop/armlab_splat_tracking
+~/Desktop/real2render2real/.venv/bin/python &lt;&lt;'PY'
+import numpy as np, plyfile, trimesh, torch
+HASH = "bzh5ej9v"
+p = plyfile.PlyData.read(f'/home/arm-beast/Downloads/sam3d_output_{HASH}.ply')['vertex']
+splat = np.stack([p['x'],p['y'],p['z']], -1).astype(np.float32)
+src   = trimesh.load(f'/home/arm-beast/Downloads/sam3d_output_{HASH}/sam3d_output_{HASH}.obj',
+                     force='mesh').vertices.astype(np.float32)
+algn  = trimesh.load(f'/home/arm-beast/Downloads/sam3d_output_{HASH}/mesh_aligned.obj',
+                     force='mesh').vertices.astype(np.float32)
+
+def chamfer(a, b, n=20000):
+    rng = np.random.default_rng(0)
+    a = a[rng.choice(len(a), min(n,len(a)), replace=False)]
+    b = b[rng.choice(len(b), min(n,len(b)), replace=False)]
+    at, bt = torch.from_numpy(a).cuda(), torch.from_numpy(b).cuda()
+    d = torch.cdist(at, bt)
+    return float((d.min(1).values.mean() + d.min(0).values.mean()) / 2)
+
+diag = lambda x: float(np.linalg.norm(x.max(0) - x.min(0)))
+print(f'scale     = {diag(algn)/diag(src):.4f}')
+print(f'pre-ICP   = {chamfer(src,  splat)*1000:.2f} mm')
+print(f'post-ICP  = {chamfer(algn, splat)*1000:.2f} mm')
+PY</code></pre>
+</div>
+
+<hr>
+
+<!-- ─────────── Troubleshooting ─────────── -->
+<h2>Troubleshooting</h2>
+
+<div class="stage">
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>SAM3 returns no mask for any prompt</td>
+        <td>Domain-specific noun; confidence too high</td>
+        <td>Try a generic alternative (<code>"bottle"</code> not <code>"protein shake"</code>; <code>"white dish"</code> not <code>"bowl"</code>); lower confidence to 0.2</td>
+      </tr>
+      <tr>
+        <td>SAM3D mesh has background bleed</td>
+        <td>Mask is loose around object</td>
+        <td>Re-mask with higher confidence; or hand-edit the PNG and re-upload</td>
+      </tr>
+      <tr>
+        <td>Post-ICP chamfer &gt; 30 mm</td>
+        <td>Best init rotation didn't include the right axis flip; very textured / asymmetric object</td>
+        <td>Re-run with <code>--icp-iters 200</code>; if still high, manually nudge in viser TransformControls and Save</td>
+      </tr>
+      <tr>
+        <td>Viser overlay doesn't open / "port 8087 already in use"</td>
+        <td>Prior python process holding the port</td>
+        <td><code>ss -tlnp | grep :8087</code> → <code>kill &lt;pid&gt;</code>, then re-launch</td>
+      </tr>
+      <tr>
+        <td>"No mesh file generated" in CLI mode</td>
+        <td><code>nvdiffrast</code> not installed in env; falls back to vertex-color only</td>
+        <td><code>pip install nvdiffrast</code> inside <code>semantic_splatting</code> env, then re-run</td>
+      </tr>
+      <tr>
+        <td>Script blocks; can't read chamfer/scale from stdout</td>
+        <td>Bash <code>| tail -N</code> buffered the output until process exit; viser holds the loop forever</td>
+        <td>Compute chamfer separately from the saved <code>mesh_aligned.obj</code> (snippet in <a href="#ref">Reference run</a>)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr>
+
+<h2>Related guides</h2>
+<ul class="compact">
+  <li><a href="PIPELINE_RUN_GUIDE.html">PIPELINE_RUN_GUIDE.html</a> — full R2R2R mug-variant pipeline (HAMER → perturbation grasps → IK → live viewer)</li>
+  <li><a href="../GRASP_PIPELINE.md">GRASP_PIPELINE.md</a> — grasp sampling on the resulting mesh (antipodal pad-grid + collision filter)</li>
+  <li><a href="../ALIGNMENT_PIPELINE.md">ALIGNMENT_PIPELINE.md</a> — splat ↔ splat alignment (semantic ICP + nearby-region weighting)</li>
+</ul>
+
+<p class="hint">Last updated: 2026-05-21. Validated on <code>sam3d_output_bzh5ej9v</code> (mug, scale 0.944, post-ICP chamfer 18.90 mm).</p>
+
+</div>
+</body>
+</html>
