@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manipulation task suite · figure studio</title>
+<style>
+  :root{
+    --ink:#171717; --ink2:#5a5a5f; --ink3:#8a8a90;
+    --page:#e9e9ee; --card:#ffffff; --line:#d8d8de;
+    --tile:#fafafb; --tile-line:#e3e3ea;
+    --red:#c8322a; --red-dk:#9e241d;
+    --serif:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;
+    --sans:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--page);color:var(--ink);font-family:var(--serif);-webkit-font-smoothing:antialiased;}
+
+  /* ---------- presentation chrome ---------- */
+  .wrap{max-width:1280px;margin:0 auto;padding:48px 32px 120px;}
+  .masthead{margin-bottom:8px;}
+  .masthead .kicker{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);font-family:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;}
+  .masthead h1{font-size:34px;font-weight:700;margin:.25em 0 .15em;letter-spacing:-.01em;}
+  .masthead p{font-size:16px;line-height:1.6;color:var(--ink2);max-width:74ch;margin:.4em 0;}
+
+  .note{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:26px 0 8px;}
+  .note h3{font-family:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin:0 0 12px;}
+  .note ul{margin:0;padding-left:18px;}
+  .note li{font-size:15px;line-height:1.7;color:var(--ink);margin:5px 0;}
+  .note li b{font-weight:700;}
+
+  .section-head{display:flex;align-items:baseline;gap:14px;margin:54px 0 6px;}
+  .section-head h2{font-family:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);margin:0;font-weight:600;}
+  .section-head .rule{flex:1;height:1px;background:var(--line);}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .card-lbl{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:2px 4px 14px;}
+  .card-lbl .name{font-family:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;font-weight:600;font-size:15px;color:var(--ink);}
+  .card-lbl .name span{color:var(--ink3);font-weight:400;}
+  .card-lbl .dims{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--ink3);}
+
+  .stage{position:relative;width:100%;overflow:hidden;background:linear-gradient(#fbfbfc,#fbfbfc) padding-box;border-radius:8px;}
+  .fig{position:absolute;top:0;left:0;transform-origin:top left;background:#fff;color:var(--ink);}
+
+  /* ---------- the figure itself ---------- */
+  .sec-h{display:flex;align-items:center;gap:16px;justify-content:center;}
+  .sec-h .t{font-weight:700;white-space:nowrap;}
+  .sec-h .t .tsmall{font-weight:400;font-style:italic;color:var(--ink3);font-size:.6em;margin-left:.4em;}
+  .sec-h .r{height:1px;background:#c9c9d0;flex:1;max-width:220px;}
+
+  /* task tile */
+  .tcard{margin:0;display:flex;flex-direction:column;align-items:center;}
+  .tphoto{display:flex;align-items:flex-end;justify-content:center;width:100%;}
+  .tphoto.bg{align-items:center;background:var(--tile);border:1px solid var(--tile-line);
+      border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .tcap{text-align:center;margin-top:14px;font-family:var(--serif);}
+  .tname{font-weight:700;line-height:1.15;}
+  .tsub{font-style:italic;color:var(--ink2);margin-top:.18em;}
+  .tmeta{display:flex;gap:.6em;align-items:center;justify-content:center;margin-top:.5em;
+      font-family:var(--sans);}
+  .cfg{display:inline-block;background:#eef2f8;color:#345f8c;border:1px solid #cfdcec;
+      border-radius:.4em;padding:.06em .55em;font-weight:700;letter-spacing:.02em;}
+  .ttime{color:var(--ink2);font-weight:600;}
+  /* avg teleop time per demo — red for emphasis, same sans data font */
+  .ttime.mark{color:var(--red);font-weight:700;}
+  .ttime.mark .tper{font-size:.82em;color:var(--red-dk);opacity:.9;}
+
+  .tfoot{font-family:var(--serif);font-style:italic;color:var(--ink3);text-align:center;margin-top:26px;}
+
+  /* Direction C: average-time summary box */
+  .avgbox{border:2px dashed var(--red);border-radius:14px;padding:24px 16px;text-align:center;
+      background:#fdf3f2;}
+  .avgn{font-family:var(--sans);color:var(--red);font-weight:800;font-size:60px;line-height:.95;letter-spacing:-.01em;}
+  .avgl{font-family:var(--sans);font-size:24px;color:var(--ink2);margin-top:8px;line-height:1.3;}
+
+  .caption-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 30px;}
+  .caption-card .figlabel{font-weight:700;font-size:17px;margin-bottom:.5em;}
+  .caption-card p{font-family:var(--serif);font-size:15.5px;line-height:1.75;color:var(--ink);margin:0;text-align:justify;}
+  .caption-card .meta{font-family:Arial,'Helvetica Neue',Helvetica,'Liberation Sans',sans-serif;font-size:12px;color:var(--ink3);margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div class="kicker">Robotics semantics paper · task-suite figure</div>
+    <h1>Manipulation task suite</h1>
+    <p>Seven teleoperated pick-and-place / articulated tasks on the xArm, shown three ways:
+       background-removed cut-outs for a clean paper figure, the raw scene photographs,
+       and a data-collection variant annotating each task with its average teleoperation
+       time per demonstration (red).</p>
+  </div>
+
+  <div class="note">
+    <h3>Reading the panels</h3>
+    <ul>
+      <li><b>Config</b> chips give the object-variation grid (e.g. <b>4×4</b> = 4 cups × 4 machines).</li>
+      <li>Direction C annotates each task with its average teleoperation time per demonstration
+          (<span style="color:var(--red);font-weight:700">red</span>), with the suite-wide mean.</li>
+    </ul>
+  </div>
+
+  <div class="section-head"><h2>Double-column (full-width banner)</h2><div class="rule"></div></div>
+  <div class="card">
+    <div class="card-lbl"><div class="name">Direction A — Task gallery</div><div class="dims">1600 px wide · 2-column (7.16 in)</div></div>
+    <div class="stage" id="stage-A2"></div>
+  </div>
+  <div class="card">
+    <div class="card-lbl"><div class="name">Direction B — Task gallery</div><div class="dims">1600 px wide · 2-column (7.16 in)</div></div>
+    <div class="stage" id="stage-B2"></div>
+  </div>
+  <div class="card">
+    <div class="card-lbl"><div class="name">Direction C — Task suite + teleop cost</div><div class="dims">1600 px wide · 2-column (7.16 in)</div></div>
+    <div class="stage" id="stage-C2"></div>
+  </div>
+
+  <div class="section-head"><h2>Single-column (tall)</h2><div class="rule"></div></div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;">
+    <div class="card" style="flex:1;min-width:340px;">
+      <div class="card-lbl"><div class="name">Direction A — Task gallery</div><div class="dims">760 px wide · 1-column (3.5 in)</div></div>
+      <div class="stage" id="stage-A1"></div>
+    </div>
+    <div class="card" style="flex:1;min-width:340px;">
+      <div class="card-lbl"><div class="name">Direction B — Task gallery</div><div class="dims">760 px wide · 1-column (3.5 in)</div></div>
+      <div class="stage" id="stage-B1"></div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Draft caption</h2><div class="rule"></div></div>
+  <div class="caption-card">
+    <div class="figlabel">Figure 2.</div>
+    <p>Our manipulation suite comprises seven teleoperated tasks on an xArm: placing a mug on a
+       single-serve coffee maker, pouring a cup into a bowl, hanging a mug on a tree, inserting a power
+       brick into a drawer, setting a power drill on a mouse pad, placing a bottle/can on a coaster, and
+       turning off a faucet. Each task is collected over a grid of object variations (the <b>config</b>
+       chip; e.g.&nbsp;4×4 = 4 cups × 4 machines) and contributes <b>[N]</b> demonstrations. Average
+       teleoperation time per demonstration ranges from ~11&nbsp;s (coaster) to ~35&nbsp;s (pour), with a
+       suite mean of ~25&nbsp;s. Backgrounds are removed for clarity; raw captures appear in the supplement.</p>
+    <div class="meta">Placeholders to fill: demonstrations per task (N), and any task you want added/removed.</div>
+  </div>
+</div>
+<script src="task_assets.js"></script>
+<script src="task_figures.js"></script>
+</body>
+</html>
