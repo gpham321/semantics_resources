@@ -1,6 +1,6 @@
 # Semantic Manipulation — Evaluation Results
 
-**Arm:** xArm  ·  **Policy:** VLA  ·  **Datasets:** coffee 1×1 & 4×4, pouring 5×3, mug-tree 5×1  ·  **Training sizes:** 50 / ~100 / 150 demos (coffee @50 & @150, pouring @105, mug-tree @150 filled)
+**Arm:** xArm  ·  **Policy:** VLA (+ SAP baseline)  ·  **Datasets:** coffee 1×1 & 4×4, pouring 5×3, mug-tree 5×1  ·  **Training sizes:** 50 / ~100 / 150 demos (coffee @50/100/150, pouring @50/105/150 + SAP baseline, mug-tree @150 filled)
 
 Legend: ✅ success · ❌ failure · grasp **S**=side / **T**=top · `(n)` = note number (see Legends). ID = in-distribution, OOD = out-of-distribution.
 
@@ -23,10 +23,16 @@ _Seven teleoperated tasks collected on the xArm. Config = object-variation grid;
 | Run | ID/ID | ID/OOD | OOD/ID | OOD/OOD | Overall |
 | --- | --- | --- | --- | --- | --- |
 | **Coffee · 4×4 VLA · @150** | 75% (12/16) | 67% (8/12) | 62% (10/16) | 42% (5/12) | **62% (35/56)** |
+| **Coffee · 4×4 VLA · @100** | 44% (7/16) | 58% (7/12) | 50% (8/16) | 33% (4/12) | **46% (26/56)** |
 | **Coffee · 4×4 VLA · @50** | 44% (7/16) | 58% (7/12) | 12% (2/16) | 50% (6/12) | **39% (22/56)** |
 | **Coffee · 1×1 VLA · @150** | 0% (0/16) | 25% (3/12) | 6% (1/16) | 17% (2/12) | **11% (6/56)** |
+| **Coffee · 1×1 VLA · @100** | 6% (1/16) | 25% (3/12) | 0% (0/16) | 25% (3/12) | **12% (7/56)** |
 | **Coffee · 1×1 VLA · @50** | 6% (1/16) | 8% (1/12) | 19% (3/16) | 17% (2/12) | **12% (7/56)** |
+| **Pouring · 5×3 VLA · @150** | 75% (9/12) | 83% (10/12) | 67% (8/12) | 67% (8/12) | **73% (35/48)** |
 | **Pouring · 5×3 VLA · @105** | 83% (10/12) | 58% (7/12) | 50% (6/12) | 25% (3/12) | **54% (26/48)** |
+| **Pouring · 5×3 VLA · @50** | 50% (6/12) | 42% (5/12) | 67% (8/12) | 8% (1/12) | **42% (20/48)** |
+| **Pouring · 1×1 VLA · @150 (partial)** | 50% (4/8) | 62% (5/8) | 38% (3/8) | 38% (3/8) | **47% (15/32)** |
+| **Pouring · 5×3 SAP · baseline** | 50% (6/12) | 42% (5/12) | 33% (4/12) | 58% (7/12) | **46% (22/48)** |
 
 _Dataset-size scaling (coffee): 4×4 climbs 39% → 62% (50→150 demos); 1×1 stays low (12% → 11%)._
 
@@ -34,30 +40,33 @@ _Mug Tree · 5×1 VLA: ID cups 12/20 (60%) + OOD cups 14/25 (56%) so far — sin
 
 ## Training runs & dataset sizes
 
-_Cross-listed with **Model Train Baselines**. Each task is trained at 50 / ~100 / 150 demos. The eval-complete rows match the grids in this report: Coffee 1×1 & 4×4 @50 and @150, Pour @105, Mug-Tree @150._
+_Cross-listed with **Model Train Baselines**. Each task is trained at 50 / ~100 / 150 demos. The eval-complete rows match the grids in this report: Coffee 1×1 & 4×4 @50/100/150, Pour @50/105/150, Mug-Tree @150._
 
-| Dataset | Size | Train | Computer | Done | Eval | On xArm |
+| Dataset | Size | Train | Computer | Started | Eval | On xArm |
 | --- | --- | --- | --- | --- | --- | --- |
-| Brick_in_Drawer | 150 | Done | Cluster | Tue | — | — |
-| Brick_in_Drawer | 50 | Done | Cluster | — | — | — |
-| Brick_in_Drawer | 100 | Queued | Cluster | — | — | — |
-| Faucet | 50 | Queued | Jinho | — | — | — |
-| Mug Tree Task | 150 | Done | Maisha | Tue | ✅ done | ✓ |
-| Mug Tree Task | 50 | Done | Aiden | Tue | — | — |
-| Mug Tree Task | 100 | Done | Aiden | — | — | — |
-| Mug/Machine 1by1 | 50 | Done | Aiden | Tue | ✅ done | ✓ |
-| Mug/Machine 1by1 | 100 | Training | Cluster | Tue | ❌ | — |
-| Mug/Machine 1by1 | 150 | Done | Aiden | — | ✅ done | ✓ |
-| Mug/Machine 4by4 | 150 | Done | Cluster | Tue | ✅ done | ✓ |
+| Brick_in_Drawer | 50 | Done | Cluster | Last Tuesday | ❌ | ✓ |
+| Brick_in_Drawer | 100 | Done | Cluster | Last Tuesday | ❌ | ✓ |
+| Brick_in_Drawer | 150 | Done | Cluster | June 2, 2026 | ❌ | ✓ |
+| Faucet | 50 | Done | Jinho | Last Tuesday | ❌ | ✓ |
+| Mug Tree Task | 50 | Done | Aiden | June 2, 2026 | ❌ | ✓ |
+| Mug Tree Task | 100 | Done | Cluster | Last Wednesday | ❌ | ✓ |
+| Mug Tree Task | 150 | Done | Maisha | June 2, 2026 | ✅ done | ✓ |
+| Mug/Machine 1by1 | 50 | Done | Aiden | June 2, 2026 | ✅ done | ✓ |
+| Mug/Machine 1by1 | 100 | Done | Cluster | June 2, 2026 | ✅ done | ✓ |
+| Mug/Machine 1by1 | 150 | Done | Aiden | Last Monday | ✅ done | ✓ |
 | Mug/Machine 4by4 | 50 | Done | Jinho | — | ✅ done | ✓ |
-| Mug/Machine 4by4 | 100 | Done | Maisha | Tue | ❌ | ✓ |
-| Pour Task | 105 | Done | Maisha | Tue | ✅ done | ✓ |
-| Pour Task | 50 | Done | Maisha | Wed | ❌ | ✓ |
-| Pour Task | 150 | — | — | — | ❌ | — |
+| Mug/Machine 4by4 | 100 | Done | Maisha | June 2, 2026 | ✅ done | ✓ |
+| Mug/Machine 4by4 | 150 | Done | Cluster | June 2, 2026 | ✅ done | ✓ |
+| Pour Task 1by1 | 50 | Queued | Aiden | Today | ❌ | — |
+| Pour Task 1by1 | 100 | Training | Aiden | Today | ❌ | — |
+| Pour Task 1by1 | 150 | Done | Aiden | Today | ✅ done | ✓ |
+| Pour Task 5by3 | 50 | Done | Maisha | June 3, 2026 | ✅ done | ✓ |
+| Pour Task 5by3 | 105 | Done | Maisha | June 2, 2026 | ✅ done | ✓ |
+| Pour Task 5by3 | 150 | Done | Jinho | Last Tuesday | ✅ done | ✓ |
 
 ## Task 1 — Cup on Coffee Machine
 
-_Dataset **Mug/Machine** · config 1×1 & 4×4 · trained at 50 / ~100 / 150 demos (50 & 150 filled; 100 pending)._
+_Dataset **Mug/Machine** · config 1×1 & 4×4 · trained at 50 / ~100 / 150 demos (all three sizes now filled)._
 
 ### 150-demo dataset
 
@@ -164,6 +173,96 @@ _Single-view model fails nearly everything; only successes are on the OOD (talle
 - ****** Released while tilted
 - **Grasp:** S = side grasp, T = top grasp.
 
+### 100-demo dataset
+
+_Mid-size training set (newly transcribed); note numbers use the **100-demo legend** below._
+
+#### 4×4 VLA @ 100 demos — 26/56 (46%)
+
+**ID Cup / ID Machine** — 7/16 (44%)
+
+| Machine ↓ / Cup → | White Basic | Orange | Black | Red |
+| --- | --- | --- | --- | --- |
+| **Keurig** | ✅ S | ❌ S (8,10) | ❌ S (8) | ✅ S |
+| **Black** | ❌ S (4) | ❌ S (10) | ❌ T (5) | ✅ S |
+| **Teal** | ❌ S (11) | ❌ S (4,11) | ❌ T (11) | ✅ S |
+| **White** | ✅ S | ✅ S | ✅ S | ❌ T (11) |
+
+**ID Cup / OOD Machine** — 7/12 (58%)
+
+| Machine ↓ / Cup → | White Basic | Orange | Black | Red |
+| --- | --- | --- | --- | --- |
+| **Red** | ✅ S | ✅ S (1) | ❌ T (11) | ✅ S |
+| **Tastyle** | ❌ S (11) | ✅ S | ✅ S | ❌ S (11) |
+| **Blue** | ✅ S (1) | ❌ S (8,10) | ❌ S (11) | ✅ S |
+
+**OOD Cup / ID Machine** — 8/16 (50%)
+
+| Machine ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Keurig** | ❌ S (8) | ✅ S | ❌ S (11) | ✅ S (2) |
+| **Black** | ❌ S (4) | ❌ S (10,11) | ✅ S (1) | ❌ S (4,11) |
+| **Teal** | ❌ S (4,11) | ✅ T | ❌ T (4,11) | ✅ S |
+| **White** | ✅ S | ✅ S | ✅ S | ❌ S (11) |
+
+**OOD Cup / OOD Machine** — 4/12 (33%)
+
+| Machine ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Red** | ❌ S (4,11) | ✅ S (1) | ❌ S (11) | ❌ S (11) |
+| **Tastyle** | ❌ S (2,8) | ✅ S (2) | ❌ S (4,11) | ❌ T (11) |
+| **Blue** | ❌ S (11) | ❌ (4,11) | ✅ S | ✅ T |
+
+#### 1×1 VLA @ 100 demos — 7/56 (12%)
+
+**ID Cup / ID Machine** — 1/16 (6%)
+
+| Machine ↓ / Cup → | White Basic | Orange | Black | Red |
+| --- | --- | --- | --- | --- |
+| **Keurig** | ❌ T (5) | ❌ S (10) | ❌ T (11) | ❌ T (11) |
+| **Black** | ❌ T (9) | ❌ S (11) | ❌ T (11) | ❌ S (11) |
+| **Teal** | ❌ T (1,5) | ❌ S (1,5) | ❌ T (9,11) | ❌ T (7,9,11) |
+| **White** | ❌ T (7,8) | ✅ S | ❌ S (11) | ❌ S (4,11) |
+
+**ID Cup / OOD Machine** — 3/12 (25%)
+
+| Machine ↓ / Cup → | White Basic | Orange | Black | Red |
+| --- | --- | --- | --- | --- |
+| **Red** | ✅ T (1) | ❌ S (10,11) | ❌ S (11) | ❌ S (11) |
+| **Tastyle** | ✅ S | ❌ T (5) | ❌ T (11) | ❌ T (7,11) |
+| **Blue** | ✅ S | ❌ S (4,11) | ❌ S (11) | ❌ T (4) |
+
+**OOD Cup / ID Machine** — 0/16 (0%)
+
+| Machine ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Keurig** | ❌ T (4) | ❌ T (5) | ❌ T (11) | ❌ S (1,5,7) |
+| **Black** | ❌ S (11) | ❌ T (9) | ❌ S (9,11) | ❌ T (7,9) |
+| **Teal** | ❌ S (11) | ❌ T (4) | ❌ T (11) | ❌ S (1,4,11) |
+| **White** | ❌ T (11) | ❌ S (12) | ❌ T (9,11) | ❌ S (7,9) |
+
+**OOD Cup / OOD Machine** — 3/12 (25%)
+
+| Machine ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Red** | ❌ S (4) | ✅ T | ❌ S (11) | ❌ S (7,11) |
+| **Tastyle** | ❌ T (4) | ❌ S (11) | ❌ S (9,11) | ✅ S |
+| **Blue** | ❌ S (9,11) | ✅ S | ❌ S (11) | ❌ T (5,7,10) |
+
+**Coffee-machine notes (100-demo sheets):**
+- 1. Pushed machine back
+- 2. Tilted placement and contact on plate
+- 3. Took double time
+- 4. Pushed cup while trying to grasp
+- 5. Dropped cup on edge of platform
+- 6. Self collision
+- 7. Spilled cup
+- 8. Force-torque trigger
+- 9. Grasped inside cup
+- 10. Gripper hooked on handle
+- 11. Cannot grab handle
+- 12. Tried to grab entire cup
+
 ### 50-demo dataset
 
 _Smaller training set; note numbers use the **50-demo legend** below._
@@ -256,11 +355,46 @@ _Codes — Cups: WB White-Basic, O Orange, Bk Black, R Red (ID); Br Brown, WC Wh
 
 ## Task 2 — Cup Pouring (into bowl)
 
-_Dataset **Pour Task** · config 5×3 · trained at 50 / ~105 / 150 demos (grid shown = 105-demo model)._
-
-### 5×3 VLA @ 105 demos — 26/48 (54%)
+_Dataset **Pour Task** · config 5×3 · trained at 50 / ~105 / 150 demos (all three filled) + SAP baseline._
 
 _Tall-White-Ceramic (Tall W.C.) column is an extra OOD cup — shown but not counted in the rate._
+
+### 5×3 VLA @ 150 demos — 35/48 (73%)
+
+**ID Cup / ID Bowl** — 9/12 (75%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ✅ S | ✅ T (1) | ✅ S | ✅ S | — |
+| **Light Blue** | ✅ T | ❌ (16) | ✅ T | ✅ S (20) | — |
+| **Black** | ✅ S (21) | ✅ T | ❌ (16,18) | ❌ (16) | — |
+
+**ID Cup / OOD Bowl** — 10/12 (83%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ❌ (16) | ✅ T | ✅ T | ✅ T | — |
+| **Tall (light blue)** | ✅ S (6) | ✅ S (6) | ❌ T (6,20) | ✅ T (6) | — |
+| **White** | ✅ S | ✅ T | ✅ T | ✅ S (3) | — |
+
+**OOD Cup / ID Bowl** — 8/12 (67%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ✅ S (3) | ✅ T (20) | ❌ (16) | ❌ (16) |
+| **Light Blue** | ✅ T | ✅ S (18) | ✅ T (13,15) | ❌ S (20) |
+| **Black** | ✅ S | ❌ (16) | ✅ T | ✅ T (3) |
+
+**OOD Cup / OOD Bowl** — 8/12 (67%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ✅ T | ❌ S (20) | ✅ T | ❌ T (14,21) |
+| **Tall (light blue)** | ✅ T (6) | ❌ T (20) | ❌ T (20) | ✅ T (3) |
+| **White** | ✅ T | ✅ S | ✅ T | ✅ T |
+
+
+### 5×3 VLA @ 105 demos — 26/48 (54%)
 
 **ID Cup / ID Bowl** — 10/12 (83%)
 
@@ -295,20 +429,154 @@ _Tall-White-Ceramic (Tall W.C.) column is an extra OOD cup — shown but not cou
 | **White** | ✅ | ❌ (11) | ❌ (12) | ❌ (12) |
 
 
-**Pouring notes:**
+### 5×3 VLA @ 50 demos — 20/48 (42%)
+
+**ID Cup / ID Bowl** — 6/12 (50%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ❌ S (13,14,15) | ✅ T | ✅ S (3) | ❌ (16) | — |
+| **Light Blue** | ❌ (16) | ❌ T (1,3,17,18) | ❌ T (1,3,17,18) | ✅ S | — |
+| **Black** | ✅ T (11) | ❌ (5) | ✅ T (2) | ✅ S | — |
+
+**ID Cup / OOD Bowl** — 5/12 (42%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ✅ S (1,14,17) | ❌ S (19) | ❌ T (20) | ❌ T (20) | — |
+| **Tall (light blue)** | ❌ T (20) | ✅ S (6,14) | ❌ S (20) | ✅ T (6) | — |
+| **White** | ✅ S (11) | ✅ T | ❌ S (18) | ❌ (7) | — |
+
+**OOD Cup / ID Bowl** — 8/12 (67%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ✅ T (3) | ❌ T (20) | ❌ (7,21) | ✅ S (1) |
+| **Light Blue** | ❌ (5) | ❌ (7) | ✅ T (6) | ✅ S |
+| **Black** | ✅ T (3) | ✅ S (1,3) | ✅ T (12) | ✅ S |
+
+**OOD Cup / OOD Bowl** — 1/12 (8%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ❌ T (20) | ❌ T (18) | ❌ (14,18) | ❌ (5,16) |
+| **Tall (light blue)** | ❌ (5,16,18) | ❌ (18) | ❌ (20) | ❌ (16) |
+| **White** | ❌ (16,18,21) | ❌ T (11,18) | ❌ (20) | ✅ T (11,21) |
+
+
+_Dataset-size scaling (pouring): 42% → 54% → 73% across 50 → 105 → 150 demos._
+
+**Pouring notes (VLA 50/105/150-demo sheets):**
 - 1. Bad return cup to table
 - 2. Went in for second pour
 - 3. A bit off-center for pour
 - 4. Tipped bowl while returning cup
 - 5. Started pushing cup down & didn't move; likely F/T error
-- 6. Tapped bowl while placing down
+- 6. Tapped bowl while placing down or pouring
 - 7. Picked up cup and stopped moving
 - 8. Tall bowl was pushed while attempting to pour
 - 9. Two partial pours -> completed
 - 10. Gripper opened while pour attempt
 - 11. Severely off center
 - 12. Tipped cup over while picking up cup
+- 13. Gripper hooked on handle
+- 14. Spilled out of bowl / spilled cup
+- 15. Can't place cup after done
+- 16. Didn't pick up cup
+- 17. Poured but didn't return cup properly
+- 18. F/T error
+- 19. Dripped cup in bowl
+- 20. Barely poured
+- 21. Picked up inside of cup
 - **STS** Succeeded only after trying all three grasp attempts (side -> top -> side)
+- **Grasp:** S = side grasp, T = top grasp.
+
+### 1×1 VLA @ 150 demos (partial) — 15/32 (47%)
+
+_Separate 1×1-config pouring model evaluated on the full grid; 16 of 48 cells were intentionally left un-run (blank)._
+
+**ID Cup / ID Bowl** — 4/8 (50%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ❌ T (20) | ❌ S (20) | ✅ S (6,20) | ❌ T (11) | — |
+| **Light Blue** | ✅ S | ✅ T (1) | — | — | — |
+| **Black** | — | — | ❌ S (5) | ✅ T (3) | — |
+
+**ID Cup / OOD Bowl** — 5/8 (62%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ✅ T | — | ❌ (16,18) | — | — |
+| **Tall (light blue)** | ✅ T (6) | ❌ T (16) | ❌ (5,16) | ✅ S | — |
+| **White** | — | ✅ S (3) | — | ✅ S | — |
+
+**OOD Cup / ID Bowl** — 3/8 (38%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ✅ T | — | ✅ T (3) | ❌ T (11) |
+| **Light Blue** | ❌ T (6,20) | ✅ T | — | ❌ (14,16) |
+| **Black** | — | ❌ (16) | ❌ T (6,11) | — |
+
+**OOD Cup / OOD Bowl** — 3/8 (38%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ❌ T (16) | — | — | ✅ S |
+| **Tall (light blue)** | — | ❌ S (11) | ❌ (16,21) | ❌ T (11) |
+| **White** | ✅ S | ✅ T (3) | ❌ S (11) | — |
+
+
+### 5×3 SAP baseline — 22/48 (46%)
+
+_Secondary baseline (SAP, not VLA) on the pouring task; the sheet header reads “1×1 X-ARM-SAP” but the grid is the same 5×3 task. Note numbers use the SAP legend below._
+
+**ID Cup / ID Bowl** — 6/12 (50%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ✅ S | ❌ (1,2) | ✅ S | ❌ (3) | — |
+| **Light Blue** | ❌ S (3,4) | ✅ S | ❌ (3) | ✅ S (6) | — |
+| **Black** | ✅ S (6) | ❌ (3) | ❌ (3) | ✅ S (4) | — |
+
+**ID Cup / OOD Bowl** — 5/12 (42%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ✅ S | ❌ (3) | ✅ S | ✅ S (7) | — |
+| **Tall (light blue)** | ❌ S (8) | ❌ (3) | ❌ (3) | ❌ S (1,8) | — |
+| **White** | ✅ S | ❌ (3) | ❌ (3) | ✅ S (9) | — |
+
+**OOD Cup / ID Bowl** — 4/12 (33%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ❌ (3) | ✅ S | ❌ (3) | ❌ (3) |
+| **Light Blue** | ✅ S | ✅ S | ❌ (3) | ❌ (3) |
+| **Black** | ❌ (3) | ✅ S | ❌ (3) | ❌ (3) |
+
+**OOD Cup / OOD Bowl** — 7/12 (58%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ❌ (3) | ✅ S | ✅ S (6) | ❌ (3) |
+| **Tall (light blue)** | ❌ S (1,8) | ✅ S (11) | ✅ S (6) | ❌ (3) |
+| **White** | ❌ (3) | ✅ S (6) | ✅ S (4) | ✅ S |
+
+
+**Pouring notes (SAP baseline sheet):**
+- 1. Spilled cup
+- 2. F/T error
+- 3. Missed handle
+- 4. Self collision
+- 5. Tapped the bowl during pour
+- 6. Off-center pour
+- 7. Bad return
+- 8. Grabbed inside of cup
+- 9. Slightly moved cup
+- 10. Hooked on handle while grasping
+- 11. Barely poured
 - **Grasp:** S = side grasp, T = top grasp.
 
 _Codes — Cups: WB White-Basic, O Orange, Bk Black, R Red, TWC Tall-White-Ceramic* (ID box); Br Brown, WC White-Ceramic, Gr Gray, P Pink (OOD). Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, TB Tall, W White (OOD)._
@@ -392,9 +660,9 @@ _Earlier run; Blue (OOD) machine not yet available (blank cells). Overall 46/48 
 | **Tastyle** | ✅ T | ✅ S (**) | ✅ T | ✅ S |
 | **Blue** | — | — | — | — |
 
-## Appendix B — Planned baseline: SAP (no data yet)
+## Appendix B — Secondary baseline: SAP
 
-SAP is the planned secondary baseline; blank templates exist, no results:
+SAP is the secondary baseline. The **pouring** eval is now filled in (see Task 2 — 5×3 SAP baseline). The coffee configs remain blank templates:
 
 - X-ARM · SAP · 1x1
 - X-ARM · SAP · 4x4

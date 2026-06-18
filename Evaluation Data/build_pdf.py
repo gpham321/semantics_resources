@@ -140,9 +140,17 @@ def render_with_matplotlib():
     with PdfPages(out) as pdf:
         # summary
         conds = ["id_id", "id_od", "od_id", "od_od"]
-        runs = [("Coffee 4×4 VLA", D.coffee_4x4_vla, None),
-                ("Coffee 1×1 VLA", D.coffee_1x1_vla, None),
-                ("Pouring 5×3 VLA", D.pouring_4x4_vla, POUR_SCORED)]
+        runs = [("Coffee 4×4 VLA @150", D.coffee_4x4_vla, None),
+                ("Coffee 4×4 VLA @100", D.coffee_4x4_vla_100, None),
+                ("Coffee 4×4 VLA @50", D.coffee_4x4_vla_50, None),
+                ("Coffee 1×1 VLA @150", D.coffee_1x1_vla, None),
+                ("Coffee 1×1 VLA @100", D.coffee_1x1_vla_100, None),
+                ("Coffee 1×1 VLA @50", D.coffee_1x1_vla_50, None),
+                ("Pouring 5×3 VLA @150", D.pouring_5x3_vla_150, POUR_SCORED),
+                ("Pouring 5×3 VLA @105", D.pouring_4x4_vla, POUR_SCORED),
+                ("Pouring 5×3 VLA @50", D.pouring_5x3_vla_50, POUR_SCORED),
+                ("Pouring 1×1 VLA @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED),
+                ("Pouring 5×3 SAP", D.pouring_5x3_sap, POUR_SCORED)]
         cells, colors = [], []
         for name, run, sc in runs:
             trow, crow = [], []
@@ -157,7 +165,7 @@ def render_with_matplotlib():
             crow.append(shade_color(tp, tn))
             cells.append(trow)
             colors.append(crow)
-        _draw_table(pdf, "Summary — success rate by condition (150-size VLA)",
+        _draw_table(pdf, "Summary — success rate by condition (VLA + SAP baseline)",
                     ["ID/ID", "ID/OOD", "OOD/ID", "OOD/OOD", "Overall"],
                     [r[0] for r in runs], cells, colors)
 
@@ -169,23 +177,39 @@ def render_with_matplotlib():
             base = "#E7F3EA" if evs in ("Yes", "In Progress") else "#FFFFFF"
             tcolors.append([base] * 7)
         _draw_table(pdf, "Training runs & dataset sizes (Model Train Baselines)",
-                    ["Dataset", "Size", "Train", "Computer", "Done", "Eval", "xArm"],
+                    ["Dataset", "Size", "Train", "Computer", "Started", "Eval", "xArm"],
                     [""] * len(tcells), tcells, tcolors)
 
-        # coffee — 150-demo then 50-demo
+        # coffee — 150-demo, 100-demo, then 50-demo
         _grid_pages(pdf, D.coffee_4x4_vla, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
                     D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 4×4 VLA @150 demos", 0)
         _grid_pages(pdf, D.coffee_1x1_vla, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
                     D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 1×1 VLA @150 demos", 0)
+        _grid_pages(pdf, D.coffee_4x4_vla_100, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
+                    D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 4×4 VLA @100 demos", 0)
+        _grid_pages(pdf, D.coffee_1x1_vla_100, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
+                    D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 1×1 VLA @100 demos", 0)
         _grid_pages(pdf, D.coffee_4x4_vla_50, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
                     D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 4×4 VLA @50 demos", 0)
         _grid_pages(pdf, D.coffee_1x1_vla_50, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
                     D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 1×1 VLA @50 demos", 0)
-        # pouring
+        # pouring — 150, 105, 50, then SAP baseline
         pour_names = {**D.CUP_NAMES, "TWC": "Tall W.C.*"}
+        _grid_pages(pdf, D.pouring_5x3_vla_150, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 5×3 VLA @150 demos", 1, scored=POUR_SCORED)
         _grid_pages(pdf, D.pouring_4x4_vla, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
                     D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
                     "Pouring 5×3 VLA @105 demos", 1, scored=POUR_SCORED)
+        _grid_pages(pdf, D.pouring_5x3_vla_50, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 5×3 VLA @50 demos", 1, scored=POUR_SCORED)
+        _grid_pages(pdf, D.pouring_1x1_vla_150, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 1×1 VLA @150 demos (partial)", 1, scored=POUR_SCORED)
+        _grid_pages(pdf, D.pouring_5x3_sap, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 5×3 SAP baseline", 1, scored=POUR_SCORED)
         # mug tree
         for which, lbl in (("id_cup", "ID cups"), ("od_cup", "OOD cups")):
             cells, colors, rl = [], [], []

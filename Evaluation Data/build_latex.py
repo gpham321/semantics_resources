@@ -131,8 +131,9 @@ def summary_table(runs):
     out = ["% ==== Summary: success rate by condition ====",
            r"\begin{table}[ht]\centering\small",
            r"\renewcommand{\arraystretch}{1.25}",
-           r"\caption{Success rate by condition (VLA). Coffee shown at 50 and 150 "
-           r"demos to expose dataset-size scaling.}",
+           r"\caption{Success rate by condition. Coffee shown at 50/100/150 and "
+           r"pouring at 50/105/150 demos to expose dataset-size scaling; SAP is a "
+           r"secondary baseline on the pouring task.}",
            r"\begin{tabular}{%s}" % colspec, r"\toprule",
            " & ".join(r"\textbf{%s}" % h for h in head) + r" \\", r"\midrule"]
     for name, run, scored in runs:
@@ -159,7 +160,7 @@ def train_table():
            r"\emph{Model Train Baselines}. Each task is trained at 50 / $\sim$100 / "
            r"150 demos; the eval-done rows match the grids in this report.}",
            r"\begin{tabular}{llcccc}", r"\toprule",
-           r"\textbf{Dataset} & \textbf{Size} & \textbf{Train} & \textbf{Done} "
+           r"\textbf{Dataset} & \textbf{Size} & \textbf{Train} & \textbf{Started} "
            r"& \textbf{Eval} & \textbf{xArm} \\", r"\midrule"]
     xmark = r"$\checkmark$"
     for _m, ds, size, train, _comp, done, evs, xarm in D.TRAIN_RUNS:
@@ -249,7 +250,7 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 \noindent\footnotesize
 xArm $\cdot$ VLA ($\pi$-style) $\cdot$ datasets: coffee 1$\times$1 \& 4$\times$4,
 pouring 5$\times$3, mug-tree 5$\times$1 $\cdot$ trained at 50 / $\sim$100 / 150 demos
-(filled: coffee @50 \& @150, pouring @105, mug-tree @150). Marks: \pass{} success,
+(filled: coffee @50/100/150, pouring @50/105/150 + SAP baseline, mug-tree @150). Marks: \pass{} success,
 \fail{} failure; superscript = grasp (S/T) and note numbers.\\[2pt]
 \textbf{Codes.} Cups: WB White-Basic, O Orange, Bk Black, R Red (ID); Br Brown,
 WC White-Ceramic, Gr Gray, P Pink (OOD); TWC Tall-White-Ceramic.\;
@@ -277,10 +278,16 @@ def build_latex():
     parts.append(section("Summary"))
     parts.append(summary_table([
         ("Coffee 4x4 VLA @150", D.coffee_4x4_vla, None),
+        ("Coffee 4x4 VLA @100", D.coffee_4x4_vla_100, None),
         ("Coffee 4x4 VLA @50", D.coffee_4x4_vla_50, None),
         ("Coffee 1x1 VLA @150", D.coffee_1x1_vla, None),
+        ("Coffee 1x1 VLA @100", D.coffee_1x1_vla_100, None),
         ("Coffee 1x1 VLA @50", D.coffee_1x1_vla_50, None),
+        ("Pouring 5x3 VLA @150", D.pouring_5x3_vla_150, POUR_SCORED),
         ("Pouring 5x3 VLA @105", D.pouring_4x4_vla, POUR_SCORED),
+        ("Pouring 5x3 VLA @50", D.pouring_5x3_vla_50, POUR_SCORED),
+        ("Pouring 1x1 VLA @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED),
+        ("Pouring 5x3 SAP (baseline)", D.pouring_5x3_sap, POUR_SCORED),
     ]))
 
     parts.append(section("Training runs \\& dataset sizes"))
@@ -291,12 +298,23 @@ def build_latex():
     parts.append(coffee_block(D.coffee_4x4_vla, "Coffee 4x4 VLA @150 demos"))
     parts.append(coffee_block(D.coffee_1x1_vla, "Coffee 1x1 VLA @150 demos"))
     parts.append(wb_redo_table())
+    parts.append("% --- 100-demo dataset (note numbers: COFFEE_NOTES_100 legend) ---")
+    parts.append(coffee_block(D.coffee_4x4_vla_100, "Coffee 4x4 VLA @100 demos"))
+    parts.append(coffee_block(D.coffee_1x1_vla_100, "Coffee 1x1 VLA @100 demos"))
     parts.append("% --- 50-demo dataset (note numbers: COFFEE_NOTES_50 legend) ---")
     parts.append(coffee_block(D.coffee_4x4_vla_50, "Coffee 4x4 VLA @50 demos"))
     parts.append(coffee_block(D.coffee_1x1_vla_50, "Coffee 1x1 VLA @50 demos"))
 
     parts.append(section("Task 2 --- Cup Pouring (rows: bowls, cols: cups)"))
+    parts.append("% --- 150-demo dataset (note numbers: POUR_NOTES legend) ---")
+    parts.append(pouring_block(D.pouring_5x3_vla_150, "Pouring 5x3 VLA @150 demos"))
+    parts.append("% --- 105-demo dataset (note numbers: POUR_NOTES legend) ---")
     parts.append(pouring_block(D.pouring_4x4_vla, "Pouring 5x3 VLA @105 demos"))
+    parts.append("% --- 50-demo dataset (note numbers: POUR_NOTES legend) ---")
+    parts.append(pouring_block(D.pouring_5x3_vla_50, "Pouring 5x3 VLA @50 demos"))
+    parts.append("% --- 1x1-config, 150 demos, PARTIAL eval (blank cells intentional) ---")
+    parts.append(pouring_block(D.pouring_1x1_vla_150,
+                               "Pouring 1x1 VLA @150 demos (partial eval)"))
 
     parts.append(section("Task 3 --- Hang Cup on Mug Tree (5 trials per cup)"))
     parts.append(mugtree_table(D.mugtree_5x1_vla["id_cup"],
@@ -304,13 +322,18 @@ def build_latex():
     parts.append(mugtree_table(D.mugtree_5x1_vla["od_cup"],
                                "Mug Tree 5x1 VLA @150 demos --- OOD cups", skip_blank=True))
 
+    parts.append(section("Task 2b --- Cup Pouring, SAP baseline (rows: bowls, cols: cups)"))
+    parts.append(pouring_block(D.pouring_5x3_sap, "Pouring 5x3 SAP baseline"))
+
     parts.append(section("Appendix A --- Coffee 4x4 VLA @150 demos (OLD run)"))
     parts.append(coffee_block(D.coffee_4x4_vla_old, "Coffee 4x4 VLA OLD @150 demos"))
 
     parts.append(section("Footnote legends"))
     parts.append(notes_block(D.COFFEE_NOTES, "Coffee notes (150-demo \\& OLD sheets)"))
+    parts.append(notes_block(D.COFFEE_NOTES_100, "Coffee notes (100-demo sheets)"))
     parts.append(notes_block(D.COFFEE_NOTES_50, "Coffee notes (50-demo sheets)"))
-    parts.append(notes_block(D.POUR_NOTES, "Pouring notes"))
+    parts.append(notes_block(D.POUR_NOTES, "Pouring notes (VLA: 50/105/150-demo sheets)"))
+    parts.append(notes_block(D.POUR_NOTES_SAP, "Pouring notes (SAP baseline sheet)"))
     parts.append(notes_block(D.MUGTREE_NOTES, "Mug-tree notes"))
 
     parts.append("\n\\end{document}\n")

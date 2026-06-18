@@ -8,6 +8,9 @@ COND_LABELS = {
     "od_od": ("OOD Cup / OOD Machine", "OOD Cup / OOD Bowl"),
 }
 
+# cups counted in the pouring success rate (TWC is shown but not scored)
+POUR_SCORED_H = ["WB", "O", "Bk", "R", "Br", "WC", "Gr", "P"]
+
 # ---- stats ----------------------------------------------------------------
 def cell_pass(cell):
     return cell is not None and cell[0] == "P"
@@ -88,25 +91,43 @@ def summary_cards(rows):
                      f'<div class="cards2">{sub}</div></div>')
     return '<div class="cards">' + "".join(cards) + "</div>"
 
-def cond_breakdown_table(runs):
-    """runs: list of (name, run, scored). Rows=runs, cols=conditions+overall."""
+def cond_breakdown_table(entries):
+    """entries: tagged list, rendered as one summary table grouped by task.
+        ("group", label)                     -> full-width task section header
+        ("run",  name, run, scored)          -> 4-condition row + overall
+        ("mug",  name, cells_by_cup, scored) -> single-axis row (conds = N/A) + overall
+    """
     conds = ["id_id", "id_od", "od_id", "od_od"]
     h = ['<table class="summary"><tr><th>Run</th>']
     for c in conds:
         h.append(f"<th>{c.replace('_','/').upper()}</th>")
     h.append("<th>Overall</th></tr>")
-    for name, run, scored in runs:
+    for entry in entries:
+        kind = entry[0]
+        if kind == "group":
+            h.append(f"<tr class='grp'><th class='grph' colspan='6'>{entry[1]}</th></tr>")
+            continue
+        if kind == "mug":
+            _, name, cells_by_cup, scored = entry
+            cells = []
+            for cup, trs in cells_by_cup.items():
+                if scored is not None and cup not in scored:
+                    continue
+                cells += trs
+            p, n = rate(cells)
+            h.append(f"<tr><th class='rowh'>{name}</th>")
+            h.append("<td class='blank' colspan='4'>single axis — n/a</td>")
+            opct = f"{100*p/n:.0f}%" if n else "—"
+            h.append(f"<td class='{pct_class(p,n)} ov'>{opct}<br><span class='sn'>{p}/{n}</span></td></tr>")
+            continue
+        _, name, run, scored = entry
         h.append(f"<tr><th class='rowh'>{name}</th>")
         tot_p = tot_n = 0
         for c in conds:
-            if c in run:
-                p, n = rate(grid_cells(run[c], scored))
-            else:
-                p, n = 0, 0
+            p, n = rate(grid_cells(run[c], scored)) if c in run else (0, 0)
             tot_p += p; tot_n += n
             cellpct = f"{100*p/n:.0f}%" if n else "—"
-            shade = pct_class(p, n)
-            h.append(f"<td class='{shade}'>{cellpct}<br><span class='sn'>{p}/{n}</span></td>")
+            h.append(f"<td class='{pct_class(p,n)}'>{cellpct}<br><span class='sn'>{p}/{n}</span></td>")
         opct = f"{100*tot_p/tot_n:.0f}%" if tot_n else "—"
         h.append(f"<td class='{pct_class(tot_p,tot_n)} ov'>{opct}<br><span class='sn'>{tot_p}/{tot_n}</span></td></tr>")
     h.append("</table>")
@@ -178,6 +199,9 @@ table.summary th,table.summary td{padding:9px 10px;text-align:center;border:1px 
 table.summary th:first-child,table.summary td:first-child{width:170px;text-align:left}
 table.summary th{background:var(--panel2);font-weight:600}
 table.summary td.ov{font-weight:700}
+table.summary tr.grp th.grph{background:#202a3d;color:#cdd9f2;text-align:left;
+ font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:7px 12px}
+table.summary td.blank{color:#6b7384;font-style:italic;font-size:12px}
 .sn{font-size:11px;color:var(--mut)}
 .conds{display:grid;grid-template-columns:1fr 1fr;gap:20px 26px;margin:14px 0}
 .cond{}
@@ -267,7 +291,7 @@ TRAIN_CLS = {"Done": "st-done", "Training": "st-train",
 def train_runs_table():
     h = ['<table class="runs"><tr>'
          '<th>Dataset</th><th>Size</th><th>Train</th><th>Computer</th>'
-         '<th>Done</th><th>Eval</th><th>On xArm</th></tr>']
+         '<th>Started</th><th>Eval</th><th>On xArm</th></tr>']
     for model, ds, size, train, comp, done, ev, xarm in D.TRAIN_RUNS:
         pill, plabel = EVAL_PILL.get(ev, EVAL_PILL[""])
         rowcls = " class='eval-done'" if ev in ("Yes", "In Progress") else ""
@@ -429,7 +453,8 @@ def build_html():
                 "(π-style) &nbsp;·&nbsp; Datasets: coffee <b>1×1</b> &amp; <b>4×4</b>, "
                 "pouring <b>5×3</b>, mug-tree <b>5×1</b> &nbsp;·&nbsp; "
                 "Training sizes: <b>50 / ~100 / 150</b> demos "
-                "(coffee @50 &amp; @150, pouring @105, mug-tree @150 filled)"
+                "(coffee @50/100/150, pouring @50/105/150 + SAP baseline, "
+                "mug-tree @150 filled)"
                 "</div></div></header>")
     html.append("<div class='wrap'>")
 
@@ -457,12 +482,24 @@ def build_html():
     ]))
     html.append("<h3>Success rate by condition</h3>")
     html.append(cond_breakdown_table([
-        ("Coffee · 4×4 VLA · @150", D.coffee_4x4_vla, None),
-        ("Coffee · 4×4 VLA · @50", D.coffee_4x4_vla_50, None),
-        ("Coffee · 1×1 VLA · @150", D.coffee_1x1_vla, None),
-        ("Coffee · 1×1 VLA · @50", D.coffee_1x1_vla_50, None),
-        ("Pouring · 5×3 VLA · @105", D.pouring_4x4_vla,
-         ["WB", "O", "Bk", "R", "Br", "WC", "Gr", "P"]),
+        ("group", "Coffee — Cup on Machine"),
+        ("run", "4×4 VLA · @50", D.coffee_4x4_vla_50, None),
+        ("run", "4×4 VLA · @100", D.coffee_4x4_vla_100, None),
+        ("run", "4×4 VLA · @150", D.coffee_4x4_vla, None),
+        ("run", "1×1 VLA · @50", D.coffee_1x1_vla_50, None),
+        ("run", "1×1 VLA · @100", D.coffee_1x1_vla_100, None),
+        ("run", "1×1 VLA · @150", D.coffee_1x1_vla, None),
+        ("group", "Pouring — Cup into Bowl"),
+        ("run", "5×3 VLA · @50", D.pouring_5x3_vla_50, POUR_SCORED_H),
+        ("run", "5×3 VLA · @105", D.pouring_4x4_vla, POUR_SCORED_H),
+        ("run", "5×3 VLA · @150", D.pouring_5x3_vla_150, POUR_SCORED_H),
+        ("run", "1×1 VLA · @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED_H),
+        ("run", "5×3 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
+        ("group", "Mug Tree — Hang on Tree"),
+        ("mug", "5×1 VLA · @150 · ID cups", D.mugtree_5x1_vla["id_cup"],
+         ["WB", "O", "Bk", "R"]),
+        ("mug", "5×1 VLA · @150 · OOD cups", D.mugtree_5x1_vla["od_cup"],
+         ["Br", "WC", "Gr", "P", "Pu"]),
     ]))
     html.append("<p class='note'>Dataset-size scaling is visible on coffee: the <b>4×4</b> "
                 f"model climbs {100*p4_50/n4_50:.0f}% → {100*p4/n4:.0f}% from 50→150 demos, "
@@ -474,13 +511,44 @@ def build_html():
     html.append("<p class='note'>Cross-listed with <b>Model Train Baselines</b>. "
                 "Every task is trained at three dataset sizes "
                 "(<b>50 / ~100 / 150</b> demos). The eval-complete rows (highlighted) match "
-                "the grids in this report: Coffee 1×1 &amp; 4×4 @50 and @150, Pour @105, "
+                "the grids in this report: Coffee 1×1 &amp; 4×4 @50/100/150, Pour @50/105/150, "
                 "Mug-Tree @150.</p>")
     html.append(train_runs_table())
 
     # Task 1 coffee
     html.append("<h2>Task 1 — Cup on Coffee Machine</h2>")
     html.append(ds_label_html("coffee"))
+
+    p1_100, n1_100 = run_rate(D.coffee_1x1_vla_100)
+    p4_100, n4_100 = run_rate(D.coffee_4x4_vla_100)
+
+    # --- 50-demo dataset ---
+    html.append("<h3>50-demo dataset</h3>")
+    html.append("<p class='note'>Smallest training set. Note numbers here use the "
+                "<b>50-demo legend</b> below (each dataset size has its own legend).</p>")
+    html.append(f"<h4 style='margin:14px 0 4px;color:#aebfe6;font-size:14.5px'>4×4 VLA "
+                f"<span class='szb'>@ 50 demos</span> &nbsp;<span class='note'>"
+                f"({p4_50}/{n4_50} = {100*p4_50/n4_50:.0f}%)</span></h4>")
+    html.append(coffee_block(D.coffee_4x4_vla_50))
+    html.append(f"<h4 style='margin:18px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
+                f"<span class='szb'>@ 50 demos</span> &nbsp;<span class='note'>"
+                f"({p1_50}/{n1_50} = {100*p1_50/n1_50:.0f}%)</span></h4>")
+    html.append(coffee_block(D.coffee_1x1_vla_50))
+    html.append(legend_html(D.COFFEE_NOTES_50, "Coffee-machine notes (50-demo sheets)"))
+
+    # --- 100-demo dataset ---
+    html.append("<h3>100-demo dataset</h3>")
+    html.append("<p class='note'>Mid-size training set (newly transcribed). Note numbers "
+                "here use the <b>100-demo legend</b> below.</p>")
+    html.append(f"<h4 style='margin:14px 0 4px;color:#aebfe6;font-size:14.5px'>4×4 VLA "
+                f"<span class='szb'>@ 100 demos</span> &nbsp;<span class='note'>"
+                f"({p4_100}/{n4_100} = {100*p4_100/n4_100:.0f}%)</span></h4>")
+    html.append(coffee_block(D.coffee_4x4_vla_100))
+    html.append(f"<h4 style='margin:18px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
+                f"<span class='szb'>@ 100 demos</span> &nbsp;<span class='note'>"
+                f"({p1_100}/{n1_100} = {100*p1_100/n1_100:.0f}%)</span></h4>")
+    html.append(coffee_block(D.coffee_1x1_vla_100))
+    html.append(legend_html(D.COFFEE_NOTES_100, "Coffee-machine notes (100-demo sheets)"))
 
     # --- 150-demo dataset (main) ---
     html.append("<h3>150-demo dataset</h3>")
@@ -512,20 +580,6 @@ def build_html():
     html.append(legend_html(D.COFFEE_NOTES, "Coffee-machine notes (150-demo sheets)",
                             grasp_legend))
 
-    # --- 50-demo dataset (new) ---
-    html.append("<h3>50-demo dataset</h3>")
-    html.append("<p class='note'>Smaller training set. Note numbers here use the "
-                "<b>50-demo legend</b> below (different from the 150-demo legend above).</p>")
-    html.append(f"<h4 style='margin:14px 0 4px;color:#aebfe6;font-size:14.5px'>4×4 VLA "
-                f"<span class='szb'>@ 50 demos</span> &nbsp;<span class='note'>"
-                f"({p4_50}/{n4_50} = {100*p4_50/n4_50:.0f}%)</span></h4>")
-    html.append(coffee_block(D.coffee_4x4_vla_50))
-    html.append(f"<h4 style='margin:18px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
-                f"<span class='szb'>@ 50 demos</span> &nbsp;<span class='note'>"
-                f"({p1_50}/{n1_50} = {100*p1_50/n1_50:.0f}%)</span></h4>")
-    html.append(coffee_block(D.coffee_1x1_vla_50))
-    html.append(legend_html(D.COFFEE_NOTES_50, "Coffee-machine notes (50-demo sheets)"))
-
     html.append("<p class='note'>Codes — Cups: WB White-Basic, O Orange, Bk Black, "
                 "R Red (ID); Br Brown, WC White-Ceramic, Gr Gray, P Pink (OOD). "
                 "Machines: K Keurig, Bk Black, T Teal, W White (ID); R Red, "
@@ -535,16 +589,55 @@ def build_html():
     # Task 2 pouring
     html.append("<h2>Task 2 — Cup Pouring (into bowl)</h2>")
     html.append(ds_label_html("pouring"))
+    pp150, np150 = run_rate(D.pouring_5x3_vla_150, scored=POUR_SCORED_H)
+    pp50, np50 = run_rate(D.pouring_5x3_vla_50, scored=POUR_SCORED_H)
+    html.append(f"<h3>5×3 VLA <span class='szb'>@ 50 demos</span> &nbsp;"
+                f"<span class='note'>({pp50}/{np50} = {100*pp50/np50:.0f}%; "
+                f"*Tall-White-Ceramic column shown but not scored)</span></h3>")
+    html.append(pouring_block(D.pouring_5x3_vla_50))
     html.append(f"<h3>5×3 VLA <span class='szb'>@ 105 demos</span> &nbsp;"
                 f"<span class='note'>({pp}/{np_} = {100*pp/np_:.0f}%; "
                 f"*Tall-White-Ceramic column shown but not scored)</span></h3>")
     html.append(pouring_block(D.pouring_4x4_vla))
-    html.append(legend_html(D.POUR_NOTES, "Pouring notes", grasp_legend))
+    html.append(f"<h3>5×3 VLA <span class='szb'>@ 150 demos</span> &nbsp;"
+                f"<span class='note'>({pp150}/{np150} = {100*pp150/np150:.0f}%; "
+                f"*Tall-White-Ceramic column shown but not scored)</span></h3>")
+    html.append(pouring_block(D.pouring_5x3_vla_150))
+    html.append("<p class='note'>Dataset-size scaling on pouring: the 5×3 model climbs "
+                f"{100*pp50/np50:.0f}% → {100*pp/np_:.0f}% → {100*pp150/np150:.0f}% "
+                "across 50 → 105 → 150 demos.</p>")
+    html.append(legend_html(D.POUR_NOTES, "Pouring notes (VLA 50/105/150-demo sheets)",
+                            grasp_legend))
+
+    # 1×1-config pouring model (separate config), partial eval
+    pp11, np11 = run_rate(D.pouring_1x1_vla_150, scored=POUR_SCORED_H)
+    html.append(f"<h3 style='margin-top:26px'>1×1 VLA <span class='szb'>@ 150 demos</span> "
+                f"&nbsp;<span class='note'>({pp11}/{np11} = {100*pp11/np11:.0f}%; "
+                f"partial eval — {48-np11} of 48 cells intentionally not run)</span></h3>")
+    html.append("<p class='note'>A separate <b>1×1-config</b> pouring model (trained on a "
+                "single cup×bowl pair) evaluated on the full grid. Blank cells were "
+                "intentionally left un-run. Same note legend as above.</p>")
+    html.append(pouring_block(D.pouring_1x1_vla_150))
+
     html.append("<p class='note'>Codes — Cups: WB White-Basic, O Orange, Bk Black, "
                 "R Red, TWC Tall-White-Ceramic* (ID box); Br Brown, WC White-Ceramic, "
                 "Gr Gray, P Pink (OOD). Bowls: BL Blue, LB Light-Blue, BK Black (ID); "
                 "P Pink, TB Tall, W White (OOD).</p>")
     html.append(empty_templates_html("pouring"))
+
+    # --- SAP baseline (secondary model on the pouring task) ---
+    psap, nsap = run_rate(D.pouring_5x3_sap, scored=POUR_SCORED_H)
+    html.append("<h3 style='margin-top:30px'>SAP baseline "
+                f"<span class='szb'>secondary model</span> &nbsp;<span class='note'>"
+                f"({psap}/{nsap} = {100*psap/nsap:.0f}%; *Tall-White-Ceramic shown but "
+                "not scored)</span></h3>")
+    html.append("<p class='note'>SAP is the planned secondary baseline; the pouring eval "
+                "is now filled in. Note numbers use the <b>SAP legend</b> below "
+                "(distinct from the VLA pouring legend). The sheet header reads "
+                "“1×1 X-ARM-SAP”, but the grid is the same 5×3 pouring task.</p>")
+    html.append(pouring_block(D.pouring_5x3_sap))
+    html.append(legend_html(D.POUR_NOTES_SAP, "Pouring notes (SAP baseline sheet)",
+                            grasp_legend))
 
     # Task 3 mug tree
     pmo, nmo = mugtree_rate({"id_cup": D.mugtree_5x1_vla["od_cup"]},
@@ -580,12 +673,15 @@ def build_html():
     html.append(coffee_block(D.coffee_4x4_vla_old))
     html.append("</div></details>")
 
-    # appendix B — planned SAP baseline (pending)
-    html.append("<details class='appendix'><summary>Appendix B — Planned baseline: SAP "
-                f"(no data yet)<span class='tag'>{len(D.PLANNED_BASELINES)} configs</span>"
+    # appendix B — SAP baseline (pouring now filled; coffee still pending)
+    psap_b, nsap_b = run_rate(D.pouring_5x3_sap, scored=POUR_SCORED_H)
+    html.append("<details class='appendix'><summary>Appendix B — Secondary baseline: SAP "
+                f"<span class='tag'>pouring filled · coffee pending</span>"
                 "</summary><div class='inner'>")
-    html.append("<div class='pending'>SAP is the planned secondary baseline. Blank "
-                "evaluation templates exist for both configs; results not yet recorded:<br>" +
+    html.append("<div class='pending'>SAP is the secondary baseline. The <b>pouring</b> "
+                f"eval is now complete (5×3 SAP — {psap_b}/{nsap_b} = "
+                f"{100*psap_b/nsap_b:.0f}%, shown in Task 2 above). The coffee configs "
+                "remain blank templates:<br>" +
                 "".join(f"<span class='kk'>{a} · {pol} · {v}</span>"
                         for a, pol, v in D.PLANNED_BASELINES) + "</div>")
     html.append("</div></details>")
@@ -674,7 +770,7 @@ def md_mugtree(cells_by_cup, skip_blank=False):
     return "\n".join(lines)
 
 def md_train_runs():
-    lines = ["| Dataset | Size | Train | Computer | Done | Eval | On xArm |",
+    lines = ["| Dataset | Size | Train | Computer | Started | Eval | On xArm |",
              "| --- | --- | --- | --- | --- | --- | --- |"]
     for model, ds, size, train, comp, done, ev, xarm in D.TRAIN_RUNS:
         evtxt = {"Yes": "✅ done", "No": "❌", "In Progress": "◑ in progress",
@@ -751,9 +847,10 @@ def build_md(stats):
                             scored=["Br", "WC", "Gr", "P", "Pu"])
     p1_50, n1_50 = run_rate(D.coffee_1x1_vla_50)
     p4_50, n4_50 = run_rate(D.coffee_4x4_vla_50)
-    m.append("**Arm:** xArm  ·  **Policy:** VLA  ·  **Datasets:** coffee 1×1 & 4×4, "
-             "pouring 5×3, mug-tree 5×1  ·  **Training sizes:** 50 / ~100 / 150 demos "
-             "(coffee @50 & @150, pouring @105, mug-tree @150 filled)\n")
+    m.append("**Arm:** xArm  ·  **Policy:** VLA (+ SAP baseline)  ·  **Datasets:** coffee "
+             "1×1 & 4×4, pouring 5×3, mug-tree 5×1  ·  **Training sizes:** 50 / ~100 / 150 "
+             "demos (coffee @50/100/150, pouring @50/105/150 + SAP baseline, "
+             "mug-tree @150 filled)\n")
     m.append("Legend: ✅ success · ❌ failure · grasp **S**=side / **T**=top · "
              "`(n)` = note number (see Legends). ID = in-distribution, "
              "OOD = out-of-distribution.\n")
@@ -775,11 +872,16 @@ def build_md(stats):
     m.append("| --- | --- | --- | --- | --- | --- |")
     for name, run, scored in [
         ("Coffee · 4×4 VLA · @150", D.coffee_4x4_vla, None),
+        ("Coffee · 4×4 VLA · @100", D.coffee_4x4_vla_100, None),
         ("Coffee · 4×4 VLA · @50", D.coffee_4x4_vla_50, None),
         ("Coffee · 1×1 VLA · @150", D.coffee_1x1_vla, None),
+        ("Coffee · 1×1 VLA · @100", D.coffee_1x1_vla_100, None),
         ("Coffee · 1×1 VLA · @50", D.coffee_1x1_vla_50, None),
-        ("Pouring · 5×3 VLA · @105", D.pouring_4x4_vla,
-         ["WB", "O", "Bk", "R", "Br", "WC", "Gr", "P"]),
+        ("Pouring · 5×3 VLA · @150", D.pouring_5x3_vla_150, POUR_SCORED_H),
+        ("Pouring · 5×3 VLA · @105", D.pouring_4x4_vla, POUR_SCORED_H),
+        ("Pouring · 5×3 VLA · @50", D.pouring_5x3_vla_50, POUR_SCORED_H),
+        ("Pouring · 1×1 VLA · @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED_H),
+        ("Pouring · 5×3 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
     ]:
         cells = []
         tp = tn = 0
@@ -800,13 +902,13 @@ def build_md(stats):
     m.append("## Training runs & dataset sizes\n")
     m.append("_Cross-listed with **Model Train Baselines**. Each task is trained at "
              "50 / ~100 / 150 demos. The eval-complete rows match the grids in this report: "
-             "Coffee 1×1 & 4×4 @50 and @150, Pour @105, Mug-Tree @150._\n")
+             "Coffee 1×1 & 4×4 @50/100/150, Pour @50/105/150, Mug-Tree @150._\n")
     m.append(md_train_runs())
     m.append("")
 
     m.append("## Task 1 — Cup on Coffee Machine\n")
     m.append("_Dataset **Mug/Machine** · config 1×1 & 4×4 · trained at 50 / ~100 / 150 "
-             "demos (50 & 150 filled; 100 pending)._\n")
+             "demos (all three sizes now filled)._\n")
 
     m.append("### 150-demo dataset\n")
     m.append(f"#### 4×4 VLA @ 150 demos — {p4}/{n4} ({100*p4/n4:.0f}%)\n")
@@ -828,6 +930,18 @@ def build_md(stats):
     m.append(md_notes(D.COFFEE_NOTES, "Coffee-machine notes (150-demo sheets)", grasp=True))
     m.append("")
 
+    m.append("### 100-demo dataset\n")
+    p1_100, n1_100 = run_rate(D.coffee_1x1_vla_100)
+    p4_100, n4_100 = run_rate(D.coffee_4x4_vla_100)
+    m.append("_Mid-size training set (newly transcribed); note numbers use the "
+             "**100-demo legend** below._\n")
+    m.append(f"#### 4×4 VLA @ 100 demos — {p4_100}/{n4_100} ({100*p4_100/n4_100:.0f}%)\n")
+    m.append(md_coffee(D.coffee_4x4_vla_100))
+    m.append(f"#### 1×1 VLA @ 100 demos — {p1_100}/{n1_100} ({100*p1_100/n1_100:.0f}%)\n")
+    m.append(md_coffee(D.coffee_1x1_vla_100))
+    m.append(md_notes(D.COFFEE_NOTES_100, "Coffee-machine notes (100-demo sheets)"))
+    m.append("")
+
     m.append("### 50-demo dataset\n")
     m.append("_Smaller training set; note numbers use the **50-demo legend** below._\n")
     m.append(f"#### 4×4 VLA @ 50 demos — {p4_50}/{n4_50} ({100*p4_50/n4_50:.0f}%)\n")
@@ -841,13 +955,39 @@ def build_md(stats):
 
     m.append("## Task 2 — Cup Pouring (into bowl)\n")
     m.append("_Dataset **Pour Task** · config 5×3 · trained at 50 / ~105 / 150 demos "
-             "(grid shown = 105-demo model)._\n")
-    m.append(f"### 5×3 VLA @ 105 demos — {pp}/{np_} ({100*pp/np_:.0f}%)\n")
+             "(all three filled) + SAP baseline._\n")
+    pp150, np150 = run_rate(D.pouring_5x3_vla_150, scored=POUR_SCORED_H)
+    pp50, np50 = run_rate(D.pouring_5x3_vla_50, scored=POUR_SCORED_H)
+    psap, nsap = run_rate(D.pouring_5x3_sap, scored=POUR_SCORED_H)
     m.append("_Tall-White-Ceramic (Tall W.C.) column is an extra OOD cup — shown but "
              "not counted in the rate._\n")
+    m.append(f"### 5×3 VLA @ 150 demos — {pp150}/{np150} ({100*pp150/np150:.0f}%)\n")
+    m.append(md_pouring(D.pouring_5x3_vla_150))
+    m.append("")
+    m.append(f"### 5×3 VLA @ 105 demos — {pp}/{np_} ({100*pp/np_:.0f}%)\n")
     m.append(md_pouring(D.pouring_4x4_vla))
     m.append("")
-    m.append(md_notes(D.POUR_NOTES, "Pouring notes", grasp=True))
+    m.append(f"### 5×3 VLA @ 50 demos — {pp50}/{np50} ({100*pp50/np50:.0f}%)\n")
+    m.append(md_pouring(D.pouring_5x3_vla_50))
+    m.append("")
+    m.append(f"_Dataset-size scaling (pouring): {100*pp50/np50:.0f}% → "
+             f"{100*pp/np_:.0f}% → {100*pp150/np150:.0f}% across 50 → 105 → 150 demos._\n")
+    m.append(md_notes(D.POUR_NOTES, "Pouring notes (VLA 50/105/150-demo sheets)", grasp=True))
+    m.append("")
+    pp11, np11 = run_rate(D.pouring_1x1_vla_150, scored=POUR_SCORED_H)
+    m.append(f"### 1×1 VLA @ 150 demos (partial) — {pp11}/{np11} "
+             f"({100*pp11/np11:.0f}%)\n")
+    m.append(f"_Separate 1×1-config pouring model evaluated on the full grid; "
+             f"{48-np11} of 48 cells were intentionally left un-run (blank)._\n")
+    m.append(md_pouring(D.pouring_1x1_vla_150))
+    m.append("")
+    m.append(f"### 5×3 SAP baseline — {psap}/{nsap} ({100*psap/nsap:.0f}%)\n")
+    m.append("_Secondary baseline (SAP, not VLA) on the pouring task; the sheet header "
+             "reads “1×1 X-ARM-SAP” but the grid is the same 5×3 task. Note numbers use "
+             "the SAP legend below._\n")
+    m.append(md_pouring(D.pouring_5x3_sap))
+    m.append("")
+    m.append(md_notes(D.POUR_NOTES_SAP, "Pouring notes (SAP baseline sheet)", grasp=True))
     m.append("\n_Codes — Cups: WB White-Basic, O Orange, Bk Black, R Red, "
              "TWC Tall-White-Ceramic* (ID box); Br Brown, WC White-Ceramic, Gr Gray, "
              "P Pink (OOD). Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, "
@@ -875,8 +1015,10 @@ def build_md(stats):
              f"Overall {po}/{no} ({100*po/no:.0f}%) of run trials._\n")
     m.append(md_coffee(D.coffee_4x4_vla_old))
 
-    m.append("## Appendix B — Planned baseline: SAP (no data yet)\n")
-    m.append("SAP is the planned secondary baseline; blank templates exist, no results:\n")
+    m.append("## Appendix B — Secondary baseline: SAP\n")
+    m.append("SAP is the secondary baseline. The **pouring** eval is now filled in "
+             "(see Task 2 — 5×3 SAP baseline). The coffee configs remain blank "
+             "templates:\n")
     for a, pol, v in D.PLANNED_BASELINES:
         m.append(f"- {a} · {pol} · {v}")
     m.append("")
