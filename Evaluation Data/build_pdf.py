@@ -149,8 +149,10 @@ def render_with_matplotlib():
                 ("Pouring 5×3 VLA @150", D.pouring_5x3_vla_150, POUR_SCORED),
                 ("Pouring 5×3 VLA @105", D.pouring_4x4_vla, POUR_SCORED),
                 ("Pouring 5×3 VLA @50", D.pouring_5x3_vla_50, POUR_SCORED),
+                ("Pouring 1×1 VLA @50 (partial)", D.pouring_1x1_vla_50, POUR_SCORED),
+                ("Pouring 1×1 VLA @100 (partial)", D.pouring_1x1_vla_100, POUR_SCORED),
                 ("Pouring 1×1 VLA @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED),
-                ("Pouring 5×3 SAP", D.pouring_5x3_sap, POUR_SCORED)]
+                ("Pouring 1×1 SAP", D.pouring_5x3_sap, POUR_SCORED)]
         cells, colors = [], []
         for name, run, sc in runs:
             trow, crow = [], []
@@ -180,6 +182,17 @@ def render_with_matplotlib():
                     ["Dataset", "Size", "Train", "Computer", "Started", "Eval", "xArm"],
                     [""] * len(tcells), tcells, tcolors)
 
+        # our-method (SAP) training runs (underlined + Yes/No eval rows only)
+        omcells, omcolors = [], []
+        for model, ds, size, status, comp, started, evs in D.OUR_METHOD_TRAINS:
+            omcells.append([model, ds, str(size), status or "–", comp or "–",
+                            started or "–", evs or "–"])
+            base = "#E7F3EA" if evs in ("Yes", "In Progress") else "#FFFFFF"
+            omcolors.append([base] * 7)
+        _draw_table(pdf, "Our-method (SAP) training runs (Our Method Train)",
+                    ["Model", "Dataset", "Size", "Status", "Computer", "Started", "Eval"],
+                    [""] * len(omcells), omcells, omcolors)
+
         # coffee — 150-demo, 100-demo, then 50-demo
         _grid_pages(pdf, D.coffee_4x4_vla, D.CUPS_ID, D.CUPS_OOD, D.MACH_ID,
                     D.MACH_OOD, D.CUP_NAMES, D.MACH_NAMES, "Coffee 4×4 VLA @150 demos", 0)
@@ -204,12 +217,18 @@ def render_with_matplotlib():
         _grid_pages(pdf, D.pouring_5x3_vla_50, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
                     D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
                     "Pouring 5×3 VLA @50 demos", 1, scored=POUR_SCORED)
+        _grid_pages(pdf, D.pouring_1x1_vla_50, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 1×1 VLA @50 demos (partial)", 1, scored=POUR_SCORED)
+        _grid_pages(pdf, D.pouring_1x1_vla_100, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
+                    D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
+                    "Pouring 1×1 VLA @100 demos (partial)", 1, scored=POUR_SCORED)
         _grid_pages(pdf, D.pouring_1x1_vla_150, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
                     D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
                     "Pouring 1×1 VLA @150 demos (partial)", 1, scored=POUR_SCORED)
         _grid_pages(pdf, D.pouring_5x3_sap, D.POUR_CUPS_ID, D.POUR_CUPS_OOD,
                     D.BOWLS_ID, D.BOWLS_OOD, pour_names, D.BOWL_NAMES,
-                    "Pouring 5×3 SAP baseline", 1, scored=POUR_SCORED)
+                    "Pouring 1×1 SAP baseline", 1, scored=POUR_SCORED)
         # mug tree
         for which, lbl in (("id_cup", "ID cups"), ("od_cup", "OOD cups")):
             cells, colors, rl = [], [], []

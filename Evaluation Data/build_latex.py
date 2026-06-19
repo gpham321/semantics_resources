@@ -173,6 +173,28 @@ def train_table():
     return "\n".join(out)
 
 
+def our_method_table():
+    ev = {"Yes": r"\textcolor{ok}{done}", "No": r"\textcolor{bad}{no}", "": "--"}
+    out = ["% ==== Our-method (SAP) training runs (Our Method Train) ====",
+           r"\begin{table}[ht]\centering\small",
+           r"\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.2}",
+           r"\caption{Our-method (SAP) training runs, cross-listed with "
+           r"\emph{Our Method Train}. Only underlined runs carrying a Yes/No in the "
+           r"Eval Completed? column are listed; the done row is the 1$\times$1 pouring "
+           r"model \texttt{pour\_quality\_2k\_lerobot} (60\%).}",
+           r"\begin{tabular}{llcccc}", r"\toprule",
+           r"\textbf{Model} & \textbf{Dataset} & \textbf{Size} & \textbf{Status} "
+           r"& \textbf{Started} & \textbf{Eval} \\", r"\midrule"]
+    for model, ds, size, status, _comp, started, evs in D.OUR_METHOD_TRAINS:
+        row = (f"{esc(model)} & {esc(ds)} & {size} & {esc(status) or '--'} & "
+               f"{esc(started) or '--'} & {ev.get(evs, esc(evs))}")
+        if evs in ("Yes", "In Progress"):
+            row = r"\rowcolor{evalbg} " + row
+        out.append(row + r" \\")
+    out += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+    return "\n".join(out)
+
+
 def mugtree_table(cells_by_cup, label, skip_blank=False):
     colspec = (">{\\raggedright\\arraybackslash}p{%s}%s C{%s}"
                % (W_MUGLBL, ("C{%s}" % W_TRIAL) * 5, W_RATE))
@@ -222,6 +244,7 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 \usepackage{pifont}
 \usepackage{amssymb}
 \usepackage{caption}
+\usepackage{placeins}  % \FloatBarrier between sections (many float tables)
 \captionsetup{font=small,labelfont=bf,skip=4pt}
 
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
@@ -250,7 +273,8 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 \noindent\footnotesize
 xArm $\cdot$ VLA ($\pi$-style) $\cdot$ datasets: coffee 1$\times$1 \& 4$\times$4,
 pouring 5$\times$3, mug-tree 5$\times$1 $\cdot$ trained at 50 / $\sim$100 / 150 demos
-(filled: coffee @50/100/150, pouring @50/105/150 + SAP baseline, mug-tree @150). Marks: \pass{} success,
+(filled: coffee @50/100/150, pouring 5$\times$3 @50/105/150, pouring 1$\times$1 @50/100/150 +
+1$\times$1 SAP baseline, mug-tree @150). Marks: \pass{} success,
 \fail{} failure; superscript = grasp (S/T) and note numbers.\\[2pt]
 \textbf{Codes.} Cups: WB White-Basic, O Orange, Bk Black, R Red (ID); Br Brown,
 WC White-Ceramic, Gr Gray, P Pink (OOD); TWC Tall-White-Ceramic.\;
@@ -263,7 +287,9 @@ Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, TB Tall, W White (OOD).
 
 def section(title):
     # titles are author-controlled LaTeX (may contain \& etc.) — do not escape
-    return "\n\\section*{%s}\n" % title
+    # \FloatBarrier flushes queued float tables so we never overflow LaTeX's
+    # float limit (this document has many \begin{table} blocks).
+    return "\n\\FloatBarrier\n\\section*{%s}\n" % title
 
 
 def notes_block(notes, title):
@@ -286,12 +312,15 @@ def build_latex():
         ("Pouring 5x3 VLA @150", D.pouring_5x3_vla_150, POUR_SCORED),
         ("Pouring 5x3 VLA @105", D.pouring_4x4_vla, POUR_SCORED),
         ("Pouring 5x3 VLA @50", D.pouring_5x3_vla_50, POUR_SCORED),
+        ("Pouring 1x1 VLA @50 (partial)", D.pouring_1x1_vla_50, POUR_SCORED),
+        ("Pouring 1x1 VLA @100 (partial)", D.pouring_1x1_vla_100, POUR_SCORED),
         ("Pouring 1x1 VLA @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED),
-        ("Pouring 5x3 SAP (baseline)", D.pouring_5x3_sap, POUR_SCORED),
+        ("Pouring 1x1 SAP (baseline)", D.pouring_5x3_sap, POUR_SCORED),
     ]))
 
     parts.append(section("Training runs \\& dataset sizes"))
     parts.append(train_table())
+    parts.append(our_method_table())
 
     parts.append(section("Task 1 --- Cup on Coffee Machine (rows: machines, cols: cups)"))
     parts.append("% --- 150-demo dataset (note numbers: COFFEE_NOTES legend) ---")
@@ -312,7 +341,11 @@ def build_latex():
     parts.append(pouring_block(D.pouring_4x4_vla, "Pouring 5x3 VLA @105 demos"))
     parts.append("% --- 50-demo dataset (note numbers: POUR_NOTES legend) ---")
     parts.append(pouring_block(D.pouring_5x3_vla_50, "Pouring 5x3 VLA @50 demos"))
-    parts.append("% --- 1x1-config, 150 demos, PARTIAL eval (blank cells intentional) ---")
+    parts.append("% --- 1x1-config pouring, PARTIAL evals (blank cells intentional) ---")
+    parts.append(pouring_block(D.pouring_1x1_vla_50,
+                               "Pouring 1x1 VLA @50 demos (partial eval)"))
+    parts.append(pouring_block(D.pouring_1x1_vla_100,
+                               "Pouring 1x1 VLA @100 demos (partial eval)"))
     parts.append(pouring_block(D.pouring_1x1_vla_150,
                                "Pouring 1x1 VLA @150 demos (partial eval)"))
 
@@ -322,8 +355,8 @@ def build_latex():
     parts.append(mugtree_table(D.mugtree_5x1_vla["od_cup"],
                                "Mug Tree 5x1 VLA @150 demos --- OOD cups", skip_blank=True))
 
-    parts.append(section("Task 2b --- Cup Pouring, SAP baseline (rows: bowls, cols: cups)"))
-    parts.append(pouring_block(D.pouring_5x3_sap, "Pouring 5x3 SAP baseline"))
+    parts.append(section("Task 2b --- Cup Pouring, 1x1 SAP baseline (rows: bowls, cols: cups)"))
+    parts.append(pouring_block(D.pouring_5x3_sap, "Pouring 1x1 SAP baseline"))
 
     parts.append(section("Appendix A --- Coffee 4x4 VLA @150 demos (OLD run)"))
     parts.append(coffee_block(D.coffee_4x4_vla_old, "Coffee 4x4 VLA OLD @150 demos"))

@@ -31,8 +31,10 @@ _Seven teleoperated tasks collected on the xArm. Config = object-variation grid;
 | **Pouring · 5×3 VLA · @150** | 75% (9/12) | 83% (10/12) | 67% (8/12) | 67% (8/12) | **73% (35/48)** |
 | **Pouring · 5×3 VLA · @105** | 83% (10/12) | 58% (7/12) | 50% (6/12) | 25% (3/12) | **54% (26/48)** |
 | **Pouring · 5×3 VLA · @50** | 50% (6/12) | 42% (5/12) | 67% (8/12) | 8% (1/12) | **42% (20/48)** |
+| **Pouring · 1×1 VLA · @50 (partial)** | 0% (0/8) | 50% (4/8) | 25% (2/8) | 25% (2/8) | **25% (8/32)** |
+| **Pouring · 1×1 VLA · @100 (partial)** | 38% (3/8) | 25% (2/8) | 38% (3/8) | 38% (3/8) | **34% (11/32)** |
 | **Pouring · 1×1 VLA · @150 (partial)** | 50% (4/8) | 62% (5/8) | 38% (3/8) | 38% (3/8) | **47% (15/32)** |
-| **Pouring · 5×3 SAP · baseline** | 50% (6/12) | 42% (5/12) | 33% (4/12) | 58% (7/12) | **46% (22/48)** |
+| **Pouring · 1×1 SAP · baseline** | 50% (6/12) | 42% (5/12) | 33% (4/12) | 58% (7/12) | **46% (22/48)** |
 
 _Dataset-size scaling (coffee): 4×4 climbs 39% → 62% (50→150 demos); 1×1 stays low (12% → 11%)._
 
@@ -54,15 +56,26 @@ _Cross-listed with **Model Train Baselines**. Each task is trained at 50 / ~100 
 | Mug/Machine 1by1 | 50 | Done | Aiden | June 2, 2026 | ✅ done | ✓ |
 | Mug/Machine 1by1 | 100 | Done | Cluster | June 2, 2026 | ✅ done | ✓ |
 | Mug/Machine 1by1 | 150 | Done | Aiden | Last Monday | ✅ done | ✓ |
-| Mug/Machine 4by4 | 50 | Done | Jinho | — | ✅ done | ✓ |
+| Mug/Machine 4by4 | 50 | Done | Jinho | Last Monday | ✅ done | ✓ |
 | Mug/Machine 4by4 | 100 | Done | Maisha | June 2, 2026 | ✅ done | ✓ |
 | Mug/Machine 4by4 | 150 | Done | Cluster | June 2, 2026 | ✅ done | ✓ |
-| Pour Task 1by1 | 50 | Queued | Aiden | Today | ❌ | — |
-| Pour Task 1by1 | 100 | Training | Aiden | Today | ❌ | — |
-| Pour Task 1by1 | 150 | Done | Aiden | Today | ✅ done | ✓ |
+| Pour Task 1by1 | 50 | Done | Aiden | Yesterday | ✅ done | ✓ |
+| Pour Task 1by1 | 100 | Done | Aiden | Yesterday | ✅ done | ✓ |
+| Pour Task 1by1 | 150 | Done | Aiden | Yesterday | ✅ done | ✓ |
 | Pour Task 5by3 | 50 | Done | Maisha | June 3, 2026 | ✅ done | ✓ |
 | Pour Task 5by3 | 105 | Done | Maisha | June 2, 2026 | ✅ done | ✓ |
 | Pour Task 5by3 | 150 | Done | Jinho | Last Tuesday | ✅ done | ✓ |
+
+### Our-method (SAP) training runs
+
+_Cross-listed with **Our Method Train**. Only the underlined runs with a Yes/No in the Eval Completed? column are shown; the done row is the 1×1 pouring model **pour_quality_2k_lerobot**, evaluated as the 1×1 SAP baseline (22/48 = 46%)._
+
+| Model | Dataset | Size | Status | Computer | Started | Eval |
+| --- | --- | --- | --- | --- | --- | --- |
+| Xarm VLA (4by4 mug/cm) | lfg_coffee_machine_scaled_2k | 2000 | Checkpoint | Maisha | Today | ❌ |
+| Xarm VLA (r2r2r baseline) | corl_mug_2k_1cm | 2000 | Checkpoint | Jinho | Yesterday | ❌ |
+| Xarm VLA | pour_cousins_2k_lerobot | 2000 | Checkpoint | Cluster | Yesterday | ❌ |
+| Xarm VLA | pour_quality_2k_lerobot | 2000 | Done | Judith | Tuesday | ✅ done |
 
 ## Task 1 — Cup on Coffee Machine
 
@@ -491,9 +504,81 @@ _Dataset-size scaling (pouring): 42% → 54% → 73% across 50 → 105 → 150 d
 - **STS** Succeeded only after trying all three grasp attempts (side -> top -> side)
 - **Grasp:** S = side grasp, T = top grasp.
 
-### 1×1 VLA @ 150 demos (partial) — 15/32 (47%)
+### 1×1 VLA — single-config pouring model (partial evals)
 
-_Separate 1×1-config pouring model evaluated on the full grid; 16 of 48 cells were intentionally left un-run (blank)._
+_Separate 1×1-config pouring model evaluated on the full grid at each dataset size; blank cells were intentionally left un-run (✓ pass / ✗ fail)._
+
+#### 1×1 VLA @ 50 demos — 8/32 (25%)
+
+**ID Cup / ID Bowl** — 0/8 (0%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ❌ (13,18) | ❌ S (6,20) | ❌ (5,16) | ❌ (5,16) | — |
+| **Light Blue** | ❌ (16) | — | ❌ (5,16) | — | — |
+| **Black** | — | ❌ (5,16) | — | ❌ (5,16) | — |
+
+**ID Cup / OOD Bowl** — 4/8 (50%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ✅ T (2) | — | ❌ (16) | ✅ T (6) | — |
+| **Tall (light blue)** | — | ✅ T (6) | ❌ (5,16) | ❌ (14,16) | — |
+| **White** | ✅ T | ❌ T (11) | — | — | — |
+
+**OOD Cup / ID Bowl** — 2/8 (25%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ❌ (5,16) | ❌ S (11) | ❌ (5,16) | ✅ T (3) |
+| **Light Blue** | ❌ (5,16) | ✅ T (6) | — | — |
+| **Black** | — | — | ❌ (5,16) | ❌ (5,16) |
+
+**OOD Cup / OOD Bowl** — 2/8 (25%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ❌ (5,16) | — | ❌ (5,16) | ✅ T |
+| **Tall (light blue)** | — | ❌ T (6,20) | ❌ (5,16) | ❌ (5,16) |
+| **White** | ✅ T (3) | ❌ (5,16) | — | — |
+
+
+#### 1×1 VLA @ 100 demos — 11/32 (34%)
+
+**ID Cup / ID Bowl** — 3/8 (38%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Blue** | ✅ S | ✅ T | — | — | — |
+| **Light Blue** | — | — | ❌ (5,16) | ❌ T (6,20) | — |
+| **Black** | ❌ (13,16,18) | ✅ T | ❌ (16,18) | ❌ (16,18) | — |
+
+**ID Cup / OOD Bowl** — 2/8 (25%)
+
+| Bowl ↓ / Cup → | White Basic | Orange | Black | Red | Tall W.C. |
+| --- | --- | --- | --- | --- | --- |
+| **Pink** | ❌ (13,16,18) | — | ❌ (16) | ❌ S (19,20) | — |
+| **Tall (light blue)** | — | ❌ (13,16,18) | ❌ (5,16) | — | — |
+| **White** | ❌ T (11) | ✅ T (3) | — | ✅ T (1,6) | — |
+
+**OOD Cup / ID Bowl** — 3/8 (38%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Blue** | ✅ T (3) | ❌ (20) | ❌ (18,20) | — |
+| **Light Blue** | ❌ T (20) | — | — | ✅ T (6,20) |
+| **Black** | — | ✅ S (3) | ❌ (16) | ❌ S (6,11,20) |
+
+**OOD Cup / OOD Bowl** — 3/8 (38%)
+
+| Bowl ↓ / Cup → | Brown | White Ceramic | Gray | Pink |
+| --- | --- | --- | --- | --- |
+| **Pink** | ✅ T | — | ❌ (16) | ✅ S |
+| **Tall (light blue)** | — | ❌ (5,16) | ❌ (5,16) | ✅ T (3,6) |
+| **White** | ❌ (14,21) | ❌ T (6,11) | — | — |
+
+
+#### 1×1 VLA @ 150 demos — 15/32 (47%; 16 of 48 cells un-run)
 
 **ID Cup / ID Bowl** — 4/8 (50%)
 
@@ -528,9 +613,12 @@ _Separate 1×1-config pouring model evaluated on the full grid; 16 of 48 cells w
 | **White** | ✅ S | ✅ T (3) | ❌ S (11) | — |
 
 
-### 5×3 SAP baseline — 22/48 (46%)
+_1×1 pouring scaling: 25% → 34% → 47% across 50 → 100 → 150 demos._
 
-_Secondary baseline (SAP, not VLA) on the pouring task; the sheet header reads “1×1 X-ARM-SAP” but the grid is the same 5×3 task. Note numbers use the SAP legend below._
+
+### 1×1 SAP baseline — 22/48 (46%)
+
+_Secondary baseline (SAP, not VLA) on the 1×1 pouring task (“1×1 X-ARM-SAP”). Note numbers use the SAP legend below._
 
 **ID Cup / ID Bowl** — 6/12 (50%)
 
@@ -662,7 +750,7 @@ _Earlier run; Blue (OOD) machine not yet available (blank cells). Overall 46/48 
 
 ## Appendix B — Secondary baseline: SAP
 
-SAP is the secondary baseline. The **pouring** eval is now filled in (see Task 2 — 5×3 SAP baseline). The coffee configs remain blank templates:
+SAP is the secondary baseline. The **pouring** eval is now filled in (see Task 2 — 1×1 SAP baseline). The coffee configs remain blank templates:
 
 - X-ARM · SAP · 1x1
 - X-ARM · SAP · 4x4

@@ -6,6 +6,7 @@
 \usepackage{pifont}
 \usepackage{amssymb}
 \usepackage{caption}
+\usepackage{placeins}  % \FloatBarrier between sections (many float tables)
 \captionsetup{font=small,labelfont=bf,skip=4pt}
 
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
@@ -34,7 +35,8 @@
 \noindent\footnotesize
 xArm $\cdot$ VLA ($\pi$-style) $\cdot$ datasets: coffee 1$\times$1 \& 4$\times$4,
 pouring 5$\times$3, mug-tree 5$\times$1 $\cdot$ trained at 50 / $\sim$100 / 150 demos
-(filled: coffee @50/100/150, pouring @50/105/150 + SAP baseline, mug-tree @150). Marks: \pass{} success,
+(filled: coffee @50/100/150, pouring 5$\times$3 @50/105/150, pouring 1$\times$1 @50/100/150 +
+1$\times$1 SAP baseline, mug-tree @150). Marks: \pass{} success,
 \fail{} failure; superscript = grasp (S/T) and note numbers.\\[2pt]
 \textbf{Codes.} Cups: WB White-Basic, O Orange, Bk Black, R Red (ID); Br Brown,
 WC White-Ceramic, Gr Gray, P Pink (OOD); TWC Tall-White-Ceramic.\;
@@ -44,6 +46,7 @@ Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, TB Tall, W White (OOD).
 \bigskip
 
 
+\FloatBarrier
 \section*{Summary}
 
 % ==== Summary: success rate by condition ====
@@ -63,13 +66,16 @@ Bowls: BL Blue, LB Light-Blue, BK Black (ID); P Pink, TB Tall, W White (OOD).
 \textbf{Pouring 5x3 VLA @150} & \cellcolor{shadeC}75\% {\tiny 9/12} & \cellcolor{shadeD}83\% {\tiny 10/12} & \cellcolor{shadeC}67\% {\tiny 8/12} & \cellcolor{shadeC}67\% {\tiny 8/12} & \cellcolor{shadeC}\textbf{73\%} {\tiny 35/48} \\
 \textbf{Pouring 5x3 VLA @105} & \cellcolor{shadeD}83\% {\tiny 10/12} & \cellcolor{shadeB}58\% {\tiny 7/12} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeA}25\% {\tiny 3/12} & \cellcolor{shadeB}\textbf{54\%} {\tiny 26/48} \\
 \textbf{Pouring 5x3 VLA @50} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeB}42\% {\tiny 5/12} & \cellcolor{shadeC}67\% {\tiny 8/12} & \cellcolor{shade0}8\% {\tiny 1/12} & \cellcolor{shadeB}\textbf{42\%} {\tiny 20/48} \\
+\textbf{Pouring 1x1 VLA @50 (partial)} & \cellcolor{shade0}0\% {\tiny 0/8} & \cellcolor{shadeB}50\% {\tiny 4/8} & \cellcolor{shadeA}25\% {\tiny 2/8} & \cellcolor{shadeA}25\% {\tiny 2/8} & \cellcolor{shadeA}\textbf{25\%} {\tiny 8/32} \\
+\textbf{Pouring 1x1 VLA @100 (partial)} & \cellcolor{shadeA}38\% {\tiny 3/8} & \cellcolor{shadeA}25\% {\tiny 2/8} & \cellcolor{shadeA}38\% {\tiny 3/8} & \cellcolor{shadeA}38\% {\tiny 3/8} & \cellcolor{shadeA}\textbf{34\%} {\tiny 11/32} \\
 \textbf{Pouring 1x1 VLA @150 (partial)} & \cellcolor{shadeB}50\% {\tiny 4/8} & \cellcolor{shadeC}62\% {\tiny 5/8} & \cellcolor{shadeA}38\% {\tiny 3/8} & \cellcolor{shadeA}38\% {\tiny 3/8} & \cellcolor{shadeB}\textbf{47\%} {\tiny 15/32} \\
-\textbf{Pouring 5x3 SAP (baseline)} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeB}42\% {\tiny 5/12} & \cellcolor{shadeA}33\% {\tiny 4/12} & \cellcolor{shadeB}58\% {\tiny 7/12} & \cellcolor{shadeB}\textbf{46\%} {\tiny 22/48} \\
+\textbf{Pouring 1x1 SAP (baseline)} & \cellcolor{shadeB}50\% {\tiny 6/12} & \cellcolor{shadeB}42\% {\tiny 5/12} & \cellcolor{shadeA}33\% {\tiny 4/12} & \cellcolor{shadeB}58\% {\tiny 7/12} & \cellcolor{shadeB}\textbf{46\%} {\tiny 22/48} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 
+\FloatBarrier
 \section*{Training runs \& dataset sizes}
 
 % ==== Training runs / dataset sizes (Model Train Baselines) ====
@@ -90,12 +96,12 @@ Mug Tree Task & 100 & Done & Last Wednesday & \textcolor{bad}{no} & $\checkmark$
 \rowcolor{evalbg} Mug/Machine 1by1 & 50 & Done & June 2, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Mug/Machine 1by1 & 100 & Done & June 2, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Mug/Machine 1by1 & 150 & Done & Last Monday & \textcolor{ok}{done} & $\checkmark$ \\
-\rowcolor{evalbg} Mug/Machine 4by4 & 50 & Done & -- & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Mug/Machine 4by4 & 50 & Done & Last Monday & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Mug/Machine 4by4 & 100 & Done & June 2, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Mug/Machine 4by4 & 150 & Done & June 2, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
-Pour Task 1by1 & 50 & Queued & Today & \textcolor{bad}{no} & -- \\
-Pour Task 1by1 & 100 & Training & Today & \textcolor{bad}{no} & -- \\
-\rowcolor{evalbg} Pour Task 1by1 & 150 & Done & Today & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Pour Task 1by1 & 50 & Done & Yesterday & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Pour Task 1by1 & 100 & Done & Yesterday & \textcolor{ok}{done} & $\checkmark$ \\
+\rowcolor{evalbg} Pour Task 1by1 & 150 & Done & Yesterday & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Pour Task 5by3 & 50 & Done & June 3, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Pour Task 5by3 & 105 & Done & June 2, 2026 & \textcolor{ok}{done} & $\checkmark$ \\
 \rowcolor{evalbg} Pour Task 5by3 & 150 & Done & Last Tuesday & \textcolor{ok}{done} & $\checkmark$ \\
@@ -103,7 +109,24 @@ Pour Task 1by1 & 100 & Training & Today & \textcolor{bad}{no} & -- \\
 \end{tabular}
 \end{table}
 
+% ==== Our-method (SAP) training runs (Our Method Train) ====
+\begin{table}[ht]\centering\small
+\setlength{\tabcolsep}{6pt}\renewcommand{\arraystretch}{1.2}
+\caption{Our-method (SAP) training runs, cross-listed with \emph{Our Method Train}. Only underlined runs carrying a Yes/No in the Eval Completed? column are listed; the done row is the 1$\times$1 pouring model \texttt{pour\_quality\_2k\_lerobot} (60\%).}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Model} & \textbf{Dataset} & \textbf{Size} & \textbf{Status} & \textbf{Started} & \textbf{Eval} \\
+\midrule
+Xarm VLA (4by4 mug/cm) & lfg\_coffee\_machine\_scaled\_2k & 2000 & Checkpoint & Today & \textcolor{bad}{no} \\
+Xarm VLA (r2r2r baseline) & corl\_mug\_2k\_1cm & 2000 & Checkpoint & Yesterday & \textcolor{bad}{no} \\
+Xarm VLA & pour\_cousins\_2k\_lerobot & 2000 & Checkpoint & Yesterday & \textcolor{bad}{no} \\
+\rowcolor{evalbg} Xarm VLA & pour\_quality\_2k\_lerobot & 2000 & Done & Tuesday & \textcolor{ok}{done} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
+
+\FloatBarrier
 \section*{Task 1 --- Cup on Coffee Machine (rows: machines, cols: cups)}
 
 % --- 150-demo dataset (note numbers: COFFEE_NOTES legend) ---
@@ -501,6 +524,7 @@ Bl & \fail & T & 7, 9 \\
 \end{table}
 
 
+\FloatBarrier
 \section*{Task 2 --- Cup Pouring (rows: bowls, cols: cups)}
 
 % --- 150-demo dataset (note numbers: POUR_NOTES legend) ---
@@ -686,7 +710,127 @@ Bl & \fail & T & 7, 9 \\
 \end{tabular}
 \end{table}
 
-% --- 1x1-config, 150 demos, PARTIAL eval (blank cells intentional) ---
+% --- 1x1-config pouring, PARTIAL evals (blank cells intentional) ---
+% ==== Pouring 1x1 VLA @50 demos (partial eval) --- ID Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @50 demos (partial eval) --- ID Cup / ID Bowl \,(0/8, 0\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{BL} & \fail\nt{13,18} & \fail\nt{S\,6,20} & \fail\nt{5,16} & \fail\nt{5,16} & \bl \\
+\textbf{LB} & \fail\nt{16} & \bl & \fail\nt{5,16} & \bl & \bl \\
+\textbf{BK} & \bl & \fail\nt{5,16} & \bl & \fail\nt{5,16} & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @50 demos (partial eval) --- ID Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @50 demos (partial eval) --- ID Cup / OOD Bowl \,(4/8, 50\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{P} & \pass\nt{T\,2} & \bl & \fail\nt{16} & \pass\nt{T\,6} & \bl \\
+\textbf{TB} & \bl & \pass\nt{T\,6} & \fail\nt{5,16} & \fail\nt{14,16} & \bl \\
+\textbf{W} & \pass\nt{T} & \fail\nt{T\,11} & \bl & \bl & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @50 demos (partial eval) --- OOD Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @50 demos (partial eval) --- OOD Cup / ID Bowl \,(2/8, 25\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{BL} & \fail\nt{5,16} & \fail\nt{S\,11} & \fail\nt{5,16} & \pass\nt{T\,3} \\
+\textbf{LB} & \fail\nt{5,16} & \pass\nt{T\,6} & \bl & \bl \\
+\textbf{BK} & \bl & \bl & \fail\nt{5,16} & \fail\nt{5,16} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @50 demos (partial eval) --- OOD Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @50 demos (partial eval) --- OOD Cup / OOD Bowl \,(2/8, 25\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{P} & \fail\nt{5,16} & \bl & \fail\nt{5,16} & \pass\nt{T} \\
+\textbf{TB} & \bl & \fail\nt{T\,6,20} & \fail\nt{5,16} & \fail\nt{5,16} \\
+\textbf{W} & \pass\nt{T\,3} & \fail\nt{5,16} & \bl & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @100 demos (partial eval) --- ID Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @100 demos (partial eval) --- ID Cup / ID Bowl \,(3/8, 38\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{BL} & \pass\nt{S} & \pass\nt{T} & \bl & \bl & \bl \\
+\textbf{LB} & \bl & \bl & \fail\nt{5,16} & \fail\nt{T\,6,20} & \bl \\
+\textbf{BK} & \fail\nt{13,16,18} & \pass\nt{T} & \fail\nt{16,18} & \fail\nt{16,18} & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @100 demos (partial eval) --- ID Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @100 demos (partial eval) --- ID Cup / OOD Bowl \,(2/8, 25\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
+\midrule
+\textbf{P} & \fail\nt{13,16,18} & \bl & \fail\nt{16} & \fail\nt{S\,19,20} & \bl \\
+\textbf{TB} & \bl & \fail\nt{13,16,18} & \fail\nt{5,16} & \bl & \bl \\
+\textbf{W} & \fail\nt{T\,11} & \pass\nt{T\,3} & \bl & \pass\nt{T\,1,6} & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @100 demos (partial eval) --- OOD Cup / ID Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @100 demos (partial eval) --- OOD Cup / ID Bowl \,(3/8, 38\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{BL} & \pass\nt{T\,3} & \fail\nt{20} & \fail\nt{18,20} & \bl \\
+\textbf{LB} & \fail\nt{T\,20} & \bl & \bl & \pass\nt{T\,6,20} \\
+\textbf{BK} & \bl & \pass\nt{S\,3} & \fail\nt{16} & \fail\nt{S\,6,11,20} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ==== Pouring 1x1 VLA @100 demos (partial eval) --- OOD Cup / OOD Bowl ====
+\begin{table}[ht]\centering\small
+\renewcommand{\arraystretch}{1.18}
+\caption{Pouring 1x1 VLA @100 demos (partial eval) --- OOD Cup / OOD Bowl \,(3/8, 38\%).}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
+\toprule
+\textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
+\midrule
+\textbf{P} & \pass\nt{T} & \bl & \fail\nt{16} & \pass\nt{S} \\
+\textbf{TB} & \bl & \fail\nt{5,16} & \fail\nt{5,16} & \pass\nt{T\,3,6} \\
+\textbf{W} & \fail\nt{14,21} & \fail\nt{T\,6,11} & \bl & \bl \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % ==== Pouring 1x1 VLA @150 demos (partial eval) --- ID Cup / ID Bowl ====
 \begin{table}[ht]\centering\small
 \renewcommand{\arraystretch}{1.18}
@@ -748,6 +892,7 @@ Bl & \fail & T & 7, 9 \\
 \end{table}
 
 
+\FloatBarrier
 \section*{Task 3 --- Hang Cup on Mug Tree (5 trials per cup)}
 
 % ==== Mug Tree 5x1 VLA @150 demos --- ID cups ====
@@ -785,12 +930,13 @@ Bl & \fail & T & 7, 9 \\
 \end{table}
 
 
-\section*{Task 2b --- Cup Pouring, SAP baseline (rows: bowls, cols: cups)}
+\FloatBarrier
+\section*{Task 2b --- Cup Pouring, 1x1 SAP baseline (rows: bowls, cols: cups)}
 
-% ==== Pouring 5x3 SAP baseline --- ID Cup / ID Bowl ====
+% ==== Pouring 1x1 SAP baseline --- ID Cup / ID Bowl ====
 \begin{table}[ht]\centering\small
 \renewcommand{\arraystretch}{1.18}
-\caption{Pouring 5x3 SAP baseline --- ID Cup / ID Bowl \,(6/12, 50\%).}
+\caption{Pouring 1x1 SAP baseline --- ID Cup / ID Bowl \,(6/12, 50\%).}
 \begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
 \toprule
 \textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
@@ -802,10 +948,10 @@ Bl & \fail & T & 7, 9 \\
 \end{tabular}
 \end{table}
 
-% ==== Pouring 5x3 SAP baseline --- ID Cup / OOD Bowl ====
+% ==== Pouring 1x1 SAP baseline --- ID Cup / OOD Bowl ====
 \begin{table}[ht]\centering\small
 \renewcommand{\arraystretch}{1.18}
-\caption{Pouring 5x3 SAP baseline --- ID Cup / OOD Bowl \,(5/12, 42\%).}
+\caption{Pouring 1x1 SAP baseline --- ID Cup / OOD Bowl \,(5/12, 42\%).}
 \begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
 \toprule
 \textbf{Bowl} & \textbf{WB} & \textbf{O} & \textbf{Bk} & \textbf{R} & \textbf{TWC} \\
@@ -817,10 +963,10 @@ Bl & \fail & T & 7, 9 \\
 \end{tabular}
 \end{table}
 
-% ==== Pouring 5x3 SAP baseline --- OOD Cup / ID Bowl ====
+% ==== Pouring 1x1 SAP baseline --- OOD Cup / ID Bowl ====
 \begin{table}[ht]\centering\small
 \renewcommand{\arraystretch}{1.18}
-\caption{Pouring 5x3 SAP baseline --- OOD Cup / ID Bowl \,(4/12, 33\%).}
+\caption{Pouring 1x1 SAP baseline --- OOD Cup / ID Bowl \,(4/12, 33\%).}
 \begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
 \toprule
 \textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
@@ -832,10 +978,10 @@ Bl & \fail & T & 7, 9 \\
 \end{tabular}
 \end{table}
 
-% ==== Pouring 5x3 SAP baseline --- OOD Cup / OOD Bowl ====
+% ==== Pouring 1x1 SAP baseline --- OOD Cup / OOD Bowl ====
 \begin{table}[ht]\centering\small
 \renewcommand{\arraystretch}{1.18}
-\caption{Pouring 5x3 SAP baseline --- OOD Cup / OOD Bowl \,(7/12, 58\%).}
+\caption{Pouring 1x1 SAP baseline --- OOD Cup / OOD Bowl \,(7/12, 58\%).}
 \begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm}C{1.15cm}C{1.15cm}C{1.15cm}C{1.15cm}}
 \toprule
 \textbf{Bowl} & \textbf{Br} & \textbf{WC} & \textbf{Gr} & \textbf{P} \\
@@ -848,6 +994,7 @@ Bl & \fail & T & 7, 9 \\
 \end{table}
 
 
+\FloatBarrier
 \section*{Appendix A --- Coffee 4x4 VLA @150 demos (OLD run)}
 
 % ==== Coffee 4x4 VLA OLD @150 demos --- ID Cup / ID Machine ====
@@ -913,6 +1060,7 @@ Bl & \fail & T & 7, 9 \\
 \end{table}
 
 
+\FloatBarrier
 \section*{Footnote legends}
 
 \noindent\footnotesize\textbf{Coffee notes (150-demo \& OLD sheets).} \textbf{1} Pushed machine back; \textbf{2} Tilted placement and contact on plate; \textbf{3} Took double time; \textbf{4} Pushed cup while trying to grasp; \textbf{5} Dropped cup on edge of platform; \textbf{6} Self collision; \textbf{7} Spilled cup; \textbf{8} Force-torque trigger; \textbf{9} Grasped inside cup; \textbf{10} Gripper hooked on handle; \textbf{11} Cannot lift mug; \textbf{O} Completed but took > 1 min; \textbf{*} Not fully in cup holder; \textbf{**} Released while tilted\normalsize\par\medskip

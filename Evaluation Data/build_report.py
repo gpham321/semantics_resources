@@ -306,6 +306,28 @@ def train_runs_table():
     return "".join(h)
 
 
+OM_STATUS_CLS = {"Done": "st-done", "Checkpoint": "st-train", "Failed": "st-queue"}
+
+def our_method_table():
+    """Our-method (SAP) training tracker — the underlined rows with a Yes/No
+    eval-completed status, from 'Our Method Train.png'."""
+    h = ['<table class="runs"><tr>'
+         '<th>Model</th><th>Dataset</th><th>Size</th><th>Status</th>'
+         '<th>Computer</th><th>Started</th><th>Eval</th></tr>']
+    for model, ds, size, status, comp, started, ev in D.OUR_METHOD_TRAINS:
+        pill, plabel = EVAL_PILL.get(ev, EVAL_PILL[""])
+        rowcls = " class='eval-done'" if ev in ("Yes", "In Progress") else ""
+        scls = OM_STATUS_CLS.get(status, "st-queue")
+        h.append(
+            f"<tr{rowcls}><td class='lft'>{model}</td>"
+            f"<td class='lft'>{ds}</td><td>{size}</td>"
+            f"<td class='{scls}'>{status or '—'}</td><td>{comp or '—'}</td>"
+            f"<td>{started or '—'}</td>"
+            f"<td><span class='pill {pill}'>{plabel}</span></td></tr>")
+    h.append("</table>")
+    return "".join(h)
+
+
 # ---- empty fill-in templates for not-yet-evaluated dataset sizes ----------
 def pending_sizes(task_key, sizes):
     """Sizes still to fill in: every trained size whose grid isn't filled yet."""
@@ -493,8 +515,10 @@ def build_html():
         ("run", "5×3 VLA · @50", D.pouring_5x3_vla_50, POUR_SCORED_H),
         ("run", "5×3 VLA · @105", D.pouring_4x4_vla, POUR_SCORED_H),
         ("run", "5×3 VLA · @150", D.pouring_5x3_vla_150, POUR_SCORED_H),
+        ("run", "1×1 VLA · @50 (partial)", D.pouring_1x1_vla_50, POUR_SCORED_H),
+        ("run", "1×1 VLA · @100 (partial)", D.pouring_1x1_vla_100, POUR_SCORED_H),
         ("run", "1×1 VLA · @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED_H),
-        ("run", "5×3 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
+        ("run", "1×1 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
         ("group", "Mug Tree — Hang on Tree"),
         ("mug", "5×1 VLA · @150 · ID cups", D.mugtree_5x1_vla["id_cup"],
          ["WB", "O", "Bk", "R"]),
@@ -511,9 +535,21 @@ def build_html():
     html.append("<p class='note'>Cross-listed with <b>Model Train Baselines</b>. "
                 "Every task is trained at three dataset sizes "
                 "(<b>50 / ~100 / 150</b> demos). The eval-complete rows (highlighted) match "
-                "the grids in this report: Coffee 1×1 &amp; 4×4 @50/100/150, Pour @50/105/150, "
-                "Mug-Tree @150.</p>")
+                "the grids in this report: Coffee 1×1 &amp; 4×4 @50/100/150, Pour 5×3 @50/105/150, "
+                "Pour 1×1 @50/100/150, Mug-Tree @150.</p>")
     html.append(train_runs_table())
+
+    # Our-method (SAP) training tracker — from "Our Method Train.png"
+    psap_om, nsap_om = run_rate(D.pouring_5x3_sap, scored=POUR_SCORED_H)
+    html.append("<h2>Our-method (SAP) training runs</h2>")
+    html.append("<p class='note'>Cross-listed with <b>Our Method Train</b>. Only the "
+                "<b>underlined</b> runs that already carry a Yes/No in the "
+                "<b>Eval&nbsp;Completed?</b> column are shown (in-flight rows with a "
+                "blank eval status are omitted). The eval-complete row (highlighted) is "
+                "the 1×1 pouring model — <b>pour_quality_2k_lerobot</b>; its eval is the "
+                f"<b>1×1 SAP baseline</b> in Task 2 ({psap_om}/{nsap_om} = "
+                f"{100*psap_om/nsap_om:.0f}%).</p>")
+    html.append(our_method_table())
 
     # Task 1 coffee
     html.append("<h2>Task 1 — Cup on Coffee Machine</h2>")
@@ -609,15 +645,31 @@ def build_html():
     html.append(legend_html(D.POUR_NOTES, "Pouring notes (VLA 50/105/150-demo sheets)",
                             grasp_legend))
 
-    # 1×1-config pouring model (separate config), partial eval
+    # 1×1-config pouring model (separate config), partial evals at 50/100/150
+    pp11_50, np11_50 = run_rate(D.pouring_1x1_vla_50, scored=POUR_SCORED_H)
+    pp11_100, np11_100 = run_rate(D.pouring_1x1_vla_100, scored=POUR_SCORED_H)
     pp11, np11 = run_rate(D.pouring_1x1_vla_150, scored=POUR_SCORED_H)
-    html.append(f"<h3 style='margin-top:26px'>1×1 VLA <span class='szb'>@ 150 demos</span> "
-                f"&nbsp;<span class='note'>({pp11}/{np11} = {100*pp11/np11:.0f}%; "
-                f"partial eval — {48-np11} of 48 cells intentionally not run)</span></h3>")
+    html.append("<h3 style='margin-top:26px'>1×1 VLA — single-config pouring model</h3>")
     html.append("<p class='note'>A separate <b>1×1-config</b> pouring model (trained on a "
-                "single cup×bowl pair) evaluated on the full grid. Blank cells were "
-                "intentionally left un-run. Same note legend as above.</p>")
+                "single cup×bowl pair) evaluated on the full grid at each dataset size. "
+                "These sheets mark ✓ = pass / ✗ = fail; blank cells were intentionally "
+                "left un-run (partial eval). Same note legend as above.</p>")
+    html.append(f"<h4 style='margin:14px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
+                f"<span class='szb'>@ 50 demos</span> &nbsp;<span class='note'>"
+                f"({pp11_50}/{np11_50} = {100*pp11_50/np11_50:.0f}%; partial eval)</span></h4>")
+    html.append(pouring_block(D.pouring_1x1_vla_50))
+    html.append(f"<h4 style='margin:18px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
+                f"<span class='szb'>@ 100 demos</span> &nbsp;<span class='note'>"
+                f"({pp11_100}/{np11_100} = {100*pp11_100/np11_100:.0f}%; partial eval)</span></h4>")
+    html.append(pouring_block(D.pouring_1x1_vla_100))
+    html.append(f"<h4 style='margin:18px 0 4px;color:#aebfe6;font-size:14.5px'>1×1 VLA "
+                f"<span class='szb'>@ 150 demos</span> &nbsp;<span class='note'>"
+                f"({pp11}/{np11} = {100*pp11/np11:.0f}%; partial eval — "
+                f"{48-np11} of 48 cells intentionally not run)</span></h4>")
     html.append(pouring_block(D.pouring_1x1_vla_150))
+    html.append("<p class='note'>Dataset-size scaling on the 1×1 pouring config: "
+                f"{100*pp11_50/np11_50:.0f}% → {100*pp11_100/np11_100:.0f}% → "
+                f"{100*pp11/np11:.0f}% across 50 → 100 → 150 demos (on the run cells).</p>")
 
     html.append("<p class='note'>Codes — Cups: WB White-Basic, O Orange, Bk Black, "
                 "R Red, TWC Tall-White-Ceramic* (ID box); Br Brown, WC White-Ceramic, "
@@ -633,8 +685,8 @@ def build_html():
                 "not scored)</span></h3>")
     html.append("<p class='note'>SAP is the planned secondary baseline; the pouring eval "
                 "is now filled in. Note numbers use the <b>SAP legend</b> below "
-                "(distinct from the VLA pouring legend). The sheet header reads "
-                "“1×1 X-ARM-SAP”, but the grid is the same 5×3 pouring task.</p>")
+                "(distinct from the VLA pouring legend). This is the "
+                "<b>1×1-config</b> pouring task (“1×1 X-ARM-SAP”).</p>")
     html.append(pouring_block(D.pouring_5x3_sap))
     html.append(legend_html(D.POUR_NOTES_SAP, "Pouring notes (SAP baseline sheet)",
                             grasp_legend))
@@ -679,7 +731,7 @@ def build_html():
                 f"<span class='tag'>pouring filled · coffee pending</span>"
                 "</summary><div class='inner'>")
     html.append("<div class='pending'>SAP is the secondary baseline. The <b>pouring</b> "
-                f"eval is now complete (5×3 SAP — {psap_b}/{nsap_b} = "
+                f"eval is now complete (1×1 SAP — {psap_b}/{nsap_b} = "
                 f"{100*psap_b/nsap_b:.0f}%, shown in Task 2 above). The coffee configs "
                 "remain blank templates:<br>" +
                 "".join(f"<span class='kk'>{a} · {pol} · {v}</span>"
@@ -777,6 +829,15 @@ def md_train_runs():
                  "": "—"}.get(ev, ev)
         lines.append(f"| {ds} | {size} | {train or '—'} | {comp or '—'} | "
                      f"{done or '—'} | {evtxt} | {'✓' if xarm else '—'} |")
+    return "\n".join(lines)
+
+def md_our_method():
+    lines = ["| Model | Dataset | Size | Status | Computer | Started | Eval |",
+             "| --- | --- | --- | --- | --- | --- | --- |"]
+    for model, ds, size, status, comp, started, ev in D.OUR_METHOD_TRAINS:
+        evtxt = {"Yes": "✅ done", "No": "❌"}.get(ev, ev or "—")
+        lines.append(f"| {model} | {ds} | {size} | {status or '—'} | "
+                     f"{comp or '—'} | {started or '—'} | {evtxt} |")
     return "\n".join(lines)
 
 def md_notes(notes, title, grasp=False):
@@ -880,8 +941,10 @@ def build_md(stats):
         ("Pouring · 5×3 VLA · @150", D.pouring_5x3_vla_150, POUR_SCORED_H),
         ("Pouring · 5×3 VLA · @105", D.pouring_4x4_vla, POUR_SCORED_H),
         ("Pouring · 5×3 VLA · @50", D.pouring_5x3_vla_50, POUR_SCORED_H),
+        ("Pouring · 1×1 VLA · @50 (partial)", D.pouring_1x1_vla_50, POUR_SCORED_H),
+        ("Pouring · 1×1 VLA · @100 (partial)", D.pouring_1x1_vla_100, POUR_SCORED_H),
         ("Pouring · 1×1 VLA · @150 (partial)", D.pouring_1x1_vla_150, POUR_SCORED_H),
-        ("Pouring · 5×3 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
+        ("Pouring · 1×1 SAP · baseline", D.pouring_5x3_sap, POUR_SCORED_H),
     ]:
         cells = []
         tp = tn = 0
@@ -904,6 +967,14 @@ def build_md(stats):
              "50 / ~100 / 150 demos. The eval-complete rows match the grids in this report: "
              "Coffee 1×1 & 4×4 @50/100/150, Pour @50/105/150, Mug-Tree @150._\n")
     m.append(md_train_runs())
+    m.append("")
+    psap_om, nsap_om = run_rate(D.pouring_5x3_sap, scored=POUR_SCORED_H)
+    m.append("### Our-method (SAP) training runs\n")
+    m.append("_Cross-listed with **Our Method Train**. Only the underlined runs with a "
+             "Yes/No in the Eval Completed? column are shown; the done row is the 1×1 "
+             "pouring model **pour_quality_2k_lerobot**, evaluated as the 1×1 SAP "
+             f"baseline ({psap_om}/{nsap_om} = {100*psap_om/nsap_om:.0f}%)._\n")
+    m.append(md_our_method())
     m.append("")
 
     m.append("## Task 1 — Cup on Coffee Machine\n")
@@ -974,17 +1045,28 @@ def build_md(stats):
              f"{100*pp/np_:.0f}% → {100*pp150/np150:.0f}% across 50 → 105 → 150 demos._\n")
     m.append(md_notes(D.POUR_NOTES, "Pouring notes (VLA 50/105/150-demo sheets)", grasp=True))
     m.append("")
+    pp11_50, np11_50 = run_rate(D.pouring_1x1_vla_50, scored=POUR_SCORED_H)
+    pp11_100, np11_100 = run_rate(D.pouring_1x1_vla_100, scored=POUR_SCORED_H)
     pp11, np11 = run_rate(D.pouring_1x1_vla_150, scored=POUR_SCORED_H)
-    m.append(f"### 1×1 VLA @ 150 demos (partial) — {pp11}/{np11} "
-             f"({100*pp11/np11:.0f}%)\n")
-    m.append(f"_Separate 1×1-config pouring model evaluated on the full grid; "
-             f"{48-np11} of 48 cells were intentionally left un-run (blank)._\n")
+    m.append("### 1×1 VLA — single-config pouring model (partial evals)\n")
+    m.append("_Separate 1×1-config pouring model evaluated on the full grid at each "
+             "dataset size; blank cells were intentionally left un-run (✓ pass / ✗ fail)._\n")
+    m.append(f"#### 1×1 VLA @ 50 demos — {pp11_50}/{np11_50} ({100*pp11_50/np11_50:.0f}%)\n")
+    m.append(md_pouring(D.pouring_1x1_vla_50))
+    m.append("")
+    m.append(f"#### 1×1 VLA @ 100 demos — {pp11_100}/{np11_100} ({100*pp11_100/np11_100:.0f}%)\n")
+    m.append(md_pouring(D.pouring_1x1_vla_100))
+    m.append("")
+    m.append(f"#### 1×1 VLA @ 150 demos — {pp11}/{np11} ({100*pp11/np11:.0f}%; "
+             f"{48-np11} of 48 cells un-run)\n")
     m.append(md_pouring(D.pouring_1x1_vla_150))
     m.append("")
-    m.append(f"### 5×3 SAP baseline — {psap}/{nsap} ({100*psap/nsap:.0f}%)\n")
-    m.append("_Secondary baseline (SAP, not VLA) on the pouring task; the sheet header "
-             "reads “1×1 X-ARM-SAP” but the grid is the same 5×3 task. Note numbers use "
-             "the SAP legend below._\n")
+    m.append(f"_1×1 pouring scaling: {100*pp11_50/np11_50:.0f}% → "
+             f"{100*pp11_100/np11_100:.0f}% → {100*pp11/np11:.0f}% across 50 → 100 → 150 demos._\n")
+    m.append("")
+    m.append(f"### 1×1 SAP baseline — {psap}/{nsap} ({100*psap/nsap:.0f}%)\n")
+    m.append("_Secondary baseline (SAP, not VLA) on the 1×1 pouring task "
+             "(“1×1 X-ARM-SAP”). Note numbers use the SAP legend below._\n")
     m.append(md_pouring(D.pouring_5x3_sap))
     m.append("")
     m.append(md_notes(D.POUR_NOTES_SAP, "Pouring notes (SAP baseline sheet)", grasp=True))
@@ -1017,7 +1099,7 @@ def build_md(stats):
 
     m.append("## Appendix B — Secondary baseline: SAP\n")
     m.append("SAP is the secondary baseline. The **pouring** eval is now filled in "
-             "(see Task 2 — 5×3 SAP baseline). The coffee configs remain blank "
+             "(see Task 2 — 1×1 SAP baseline). The coffee configs remain blank "
              "templates:\n")
     for a, pol, v in D.PLANNED_BASELINES:
         m.append(f"- {a} · {pol} · {v}")

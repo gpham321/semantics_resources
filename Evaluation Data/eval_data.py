@@ -484,9 +484,10 @@ pouring_5x3_vla_150 = {
 }
 
 # ===========================================================================
-# POURING — 5x3  X-ARM-SAP   baseline   (page 4)
+# POURING — 1x1  X-ARM-SAP   baseline   (page 4)
 # Secondary baseline (SAP, not VLA).  Notes use POUR_NOTES_SAP legend.
-# Sheet header reads "1x1 X-ARM-SAP" but the grid is the 5x3 pouring task.
+# Sheet header reads "1x1 X-ARM-SAP" — this is the 1x1-config pouring task
+# (variable name kept as `pouring_5x3_sap` for backward compatibility).
 # ===========================================================================
 pouring_5x3_sap = {
     "id_id": grid({
@@ -549,6 +550,71 @@ pouring_1x1_vla_150 = {
 }
 
 # ===========================================================================
+# POURING — 1x1  X-ARM-VLA   50-size dataset   (page 1)
+# 1x1-config pouring model.  Sheet marks ✓ = pass, X = fail (with notes); blank
+# cells = intentionally not run (partial eval, like the 150-size sheet).
+# Notes use POUR_NOTES legend.  TWC column not run.
+# ===========================================================================
+pouring_1x1_vla_50 = {
+    "id_id": grid({
+        #        WB         O           Bk         R          TWC
+        "BL": ["F 13,18", "F S 6,20", "F 5,16",  "F 5,16",  "-"],
+        "LB": ["F 16",    "-",        "F 5,16",  "-",       "-"],
+        "BK": ["-",       "F 5,16",   "-",       "F 5,16",  "-"],
+    }, POUR_CUPS_ID, BOWLS_ID),
+    "id_od": grid({
+        #        WB        O          Bk         R           TWC
+        "P":  ["P T 2",  "-",       "F 16",    "P T 6",    "-"],
+        "TB": ["-",      "P T 6",   "F 5,16",  "F 14,16",  "-"],
+        "W":  ["P T",    "F T 11",  "-",       "-",        "-"],
+    }, POUR_CUPS_ID, BOWLS_OOD),
+    "od_id": grid({
+        #        Br         WC         Gr         P
+        "BL": ["F 5,16",  "F S 11",  "F 5,16",  "P T 3"],
+        "LB": ["F 5,16",  "P T 6",   "-",       "-"],
+        "BK": ["-",       "-",       "F 5,16",  "F 5,16"],
+    }, POUR_CUPS_OOD, BOWLS_ID),
+    "od_od": grid({
+        #        Br         WC          Gr         P
+        "P":  ["F 5,16",  "-",        "F 5,16",  "P T"],
+        "TB": ["-",       "F T 6,20", "F 5,16",  "F 5,16"],
+        "W":  ["P T 3",   "F 5,16",   "-",       "-"],
+    }, POUR_CUPS_OOD, BOWLS_OOD),
+}
+
+# ===========================================================================
+# POURING — 1x1  X-ARM-VLA   100-size dataset   (page 2)
+# 1x1-config pouring model.  Same notation as the 50-size sheet (✓ pass /
+# X fail; blank = not run).  Notes use POUR_NOTES legend.  TWC column not run.
+# ===========================================================================
+pouring_1x1_vla_100 = {
+    "id_id": grid({
+        #        WB             O        Bk          R           TWC
+        "BL": ["P S",         "P T",   "-",        "-",        "-"],
+        "LB": ["-",           "-",     "F 5,16",   "F T 6,20", "-"],
+        "BK": ["F 13,16,18",  "P T",   "F 16,18",  "F 16,18",  "-"],
+    }, POUR_CUPS_ID, BOWLS_ID),
+    "id_od": grid({
+        #        WB             O              Bk         R            TWC
+        "P":  ["F 13,16,18",  "-",           "F 16",    "F S 19,20", "-"],
+        "TB": ["-",           "F 13,16,18",  "F 5,16",  "-",         "-"],
+        "W":  ["F T 11",      "P T 3",       "-",       "P T 1,6",   "-"],
+    }, POUR_CUPS_ID, BOWLS_OOD),
+    "od_id": grid({
+        #        Br         WC         Gr          P
+        "BL": ["P T 3",   "F 20",    "F 18,20",  "-"],
+        "LB": ["F T 20",  "-",       "-",        "P T 6,20"],
+        "BK": ["-",       "P S 3",   "F 16",     "F S 6,11,20"],
+    }, POUR_CUPS_OOD, BOWLS_ID),
+    "od_od": grid({
+        #        Br          WC         Gr         P
+        "P":  ["P T",      "-",       "F 16",    "P S"],
+        "TB": ["-",        "F 5,16",  "F 5,16",  "P T 3,6"],
+        "W":  ["F 14,21",  "F T 6,11","-",       "-"],
+    }, POUR_CUPS_OOD, BOWLS_OOD),
+}
+
+# ===========================================================================
 # Dataset / training metadata
 # Each task is collected as an N×M demo grid and trained at three dataset
 # sizes (50 / ~100 / 150 demos).  Coffee has 50- and 150-size grids filled;
@@ -578,12 +644,12 @@ TRAIN_RUNS = [
     ("Xarm VLA", "Mug/Machine 1by1", 50,  "Done",     "Aiden",   "June 2, 2026",   "Yes", True),
     ("Xarm VLA", "Mug/Machine 1by1", 100, "Done",     "Cluster", "June 2, 2026",   "Yes", True),
     ("Xarm VLA", "Mug/Machine 1by1", 150, "Done",     "Aiden",   "Last Monday",    "Yes", True),
-    ("Xarm VLA", "Mug/Machine 4by4", 50,  "Done",     "Jinho",   "",               "Yes", True),
+    ("Xarm VLA", "Mug/Machine 4by4", 50,  "Done",     "Jinho",   "Last Monday",    "Yes", True),
     ("Xarm VLA", "Mug/Machine 4by4", 100, "Done",     "Maisha",  "June 2, 2026",   "Yes", True),
     ("Xarm VLA", "Mug/Machine 4by4", 150, "Done",     "Cluster", "June 2, 2026",   "Yes", True),
-    ("Xarm VLA", "Pour Task 1by1",   50,  "Queued",   "Aiden",   "Today",          "No",  False),
-    ("Xarm VLA", "Pour Task 1by1",   100, "Training", "Aiden",   "Today",          "No",  False),
-    ("Xarm VLA", "Pour Task 1by1",   150, "Done",     "Aiden",   "Today",          "Yes", True),
+    ("Xarm VLA", "Pour Task 1by1",   50,  "Done",     "Aiden",   "Yesterday",      "Yes", True),
+    ("Xarm VLA", "Pour Task 1by1",   100, "Done",     "Aiden",   "Yesterday",      "Yes", True),
+    ("Xarm VLA", "Pour Task 1by1",   150, "Done",     "Aiden",   "Yesterday",      "Yes", True),
     ("Xarm VLA", "Pour Task 5by3",   50,  "Done",     "Maisha",  "June 3, 2026",   "Yes", True),
     ("Xarm VLA", "Pour Task 5by3",   105, "Done",     "Maisha",  "June 2, 2026",   "Yes", True),
     ("Xarm VLA", "Pour Task 5by3",   150, "Done",     "Jinho",   "Last Tuesday",   "Yes", True),
@@ -602,6 +668,22 @@ OPTIONAL_BASELINES = [
 
 # Backward-compatible flat list (all blank templates)
 PENDING_RUNS = PLANNED_BASELINES + OPTIONAL_BASELINES
+
+# ===========================================================================
+# Our-method (SAP) training tracker, transcribed from "Our Method Train.png".
+# Only the rows that are *underlined* on the sheet AND carry a Yes/No in the
+# "Eval Completed?" column are listed here (the rest are still in-flight with a
+# blank eval status and are intentionally omitted).
+# fields: (model, dataset, size, status, computer, started, eval_status)
+#   status      ∈ {Checkpoint, Done, Failed}
+#   eval_status ∈ {Yes, No}
+# ===========================================================================
+OUR_METHOD_TRAINS = [
+    ("Xarm VLA (4by4 mug/cm)",  "lfg_coffee_machine_scaled_2k", 2000, "Checkpoint", "Maisha",  "Today",     "No"),
+    ("Xarm VLA (r2r2r baseline)","corl_mug_2k_1cm",              2000, "Checkpoint", "Jinho",   "Yesterday", "No"),
+    ("Xarm VLA",                 "pour_cousins_2k_lerobot",      2000, "Checkpoint", "Cluster", "Yesterday", "No"),
+    ("Xarm VLA",                 "pour_quality_2k_lerobot",      2000, "Done",       "Judith",  "Tuesday",   "Yes"),
+]
 
 # ===========================================================================
 # MUG TREE — 5x1  X-ARM-VLA   (Data/Semantic Evaluation Mug Tree.pdf, 150 size)
